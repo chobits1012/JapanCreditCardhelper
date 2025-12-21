@@ -97,6 +97,32 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'credit-card-helper-storage',
+            version: 1,
+            migrate: (persistedState: any, version) => {
+                if (version === 0 || version === undefined) {
+                    // Migration from v0 to v1:
+                    // Ensure all "System Virtual Cards" (e.g. All Plus, JKO) are present.
+                    // We DO NOT overwrite user's existing cards, only append missing system ones.
+
+                    const existingCards = persistedState.cards || [];
+                    const virtualCardIds = ['card_virtual_allplus', 'card_virtual_jko'];
+
+                    const missingCards = MOCK_CARDS.filter(mock =>
+                        virtualCardIds.includes(mock.id) &&
+                        !existingCards.some((existing: CreditCard) => existing.id === mock.id)
+                    );
+
+                    if (missingCards.length > 0) {
+                        return {
+                            ...persistedState,
+                            cards: [...existingCards, ...missingCards],
+                            // Optional: Add them to activeCardIds if you want them enabled by default
+                            // activeCardIds: [...(persistedState.activeCardIds || []), ...missingCards.map(c => c.id)] 
+                        };
+                    }
+                }
+                return persistedState;
+            },
         }
     )
 );
