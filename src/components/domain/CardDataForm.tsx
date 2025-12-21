@@ -23,6 +23,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
     const [baseRate, setBaseRate] = useState(activeProgram ? (activeProgram.baseRate * 100).toString() : '1');
+    const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
 
     // Bonus Rule State
     const [hasBonus, setHasBonus] = useState(!!activeRule);
@@ -70,7 +71,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                         setCheckRegistration(rule.requiresRegistration || false);
                     }
                 }
-                // Could verify with a toast here, but simple alert is fine for now or just visual change
             } else {
                 alert('找不到符合的卡片資料，請嘗試關鍵字（如：富邦 J, CUBE）');
             }
@@ -112,6 +112,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             bank,
             statementDate: parseInt(statementDate) || 27,
             foreignTxFee: parseFloat(foreignTxFee) || 1.5,
+            supportedPaymentMethods,
             programs: [updatedProgram]
         };
 
@@ -153,6 +154,31 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                         </button>
                     </div>
                 )}
+
+                {/* Payment Methods Configuration */}
+                <div className={`space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300 fill-mode-backwards`}>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">支援特殊支付 (選填)</label>
+                    <div className="bg-white/40 p-4 rounded-xl border border-white/40 space-y-2">
+                        <p className="text-[10px] text-gray-400 mb-2">勾選後，當試算選擇該支付方式時，此卡片會被納入計算。</p>
+                        {['PayPay (玉山Wallet)', 'PayPay (全支付)', 'PayPay (街口)'].map(method => (
+                            <label key={method} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/50 transition-colors cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={supportedPaymentMethods?.includes(method) || false}
+                                    onChange={(e) => {
+                                        const current = supportedPaymentMethods || [];
+                                        const next = e.target.checked
+                                            ? [...current, method]
+                                            : current.filter(m => m !== method);
+                                        setSupportedPaymentMethods(next);
+                                    }}
+                                    className="rounded text-indigo-600 focus:ring-indigo-500 bg-white/70 border-gray-300"
+                                />
+                                <span className="text-sm text-gray-700 font-medium">{method}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
 
                 {/* Basic Info */}
                 <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">

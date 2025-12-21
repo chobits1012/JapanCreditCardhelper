@@ -8,9 +8,6 @@ import type { MerchantCategory } from '../../types';
 export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction } = useStore();
 
-    // Filter active cards
-    const activeCards = cards.filter(c => activeCardIds.includes(c.id));
-
     // Form State
     const [amount, setAmount] = useState<number>(10000);
     const [currency, setCurrency] = useState<'JPY' | 'TWD'>('JPY');
@@ -24,6 +21,35 @@ export default function QuickCalculator() {
 
     const [results, setResults] = useState<CalculationResult[]>([]);
     const [savedId, setSavedId] = useState<string | null>(null); // Feedback for save
+
+    // Filter active cards logic
+    const activeCards = cards.filter(c => {
+        // Condition A: It's an active card marked by user
+        const isActive = activeCardIds.includes(c.id);
+
+        // Condition B: It's a special Virtual Card (ID starts with 'card_virtual_')
+        // We include virtual cards if they match the special payment method
+        const isVirtual = c.id.startsWith('card_virtual_');
+
+        // Initial filter: Must be active OR virtual
+        if (!isActive && !isVirtual) return false;
+
+        // Payment Method Filtering Logic
+        const isSpecialPayment = paymentMethod.startsWith('PayPay');
+
+        if (isSpecialPayment) {
+            // If selecting PayPay, ONLY show cards that explicitly support it
+            return c.supportedPaymentMethods?.includes(paymentMethod);
+        } else {
+            // If generic payment (e.g. Apple Pay), EXCLUDE cards that are strictly for special payments (virtual ones)
+            // unless we decide virtual cards can do generic? (Usually no, account payments are specific)
+            if (isVirtual && c.supportedPaymentMethods && c.supportedPaymentMethods.length > 0) return false;
+
+            // For normal cards, we assume they support generic methods unless specified otherwise
+            // (Simple model: if supportedPaymentMethods is empty, it's a normal card)
+            return true;
+        }
+    });
 
     // Fetch Exchange Rate when Currency changes to JPY
     useEffect(() => {
@@ -79,7 +105,6 @@ export default function QuickCalculator() {
         setSavedId(null);
         const baseTx = createBaseTransaction();
 
-        // 2. Calculate for each card
         // 2. Calculate for each card
         const calculatedResults = activeCards.map(card => {
             // Pre-calculate usage for this card based on the transaction date and card's billing cycle
