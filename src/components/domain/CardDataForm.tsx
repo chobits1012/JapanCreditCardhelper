@@ -90,11 +90,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const now = new Date();
         const cardId = initialCard?.id || crypto.randomUUID();
         const programId = activeProgram?.id || crypto.randomUUID();
 
-        // Construct Program
         const updatedProgram = {
             id: programId,
             cardId: cardId,
