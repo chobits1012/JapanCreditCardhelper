@@ -23,6 +23,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
     const [baseRate, setBaseRate] = useState(activeProgram ? (activeProgram.baseRate * 100).toString() : '1');
+    const [programStartDate, setProgramStartDate] = useState(activeProgram?.startDate || format(new Date(), 'yyyy-MM-dd'));
+    const [programEndDate, setProgramEndDate] = useState(activeProgram?.endDate || format(addYears(new Date(), 2), 'yyyy-MM-dd'));
     const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
 
     // Bonus Rule State
@@ -68,8 +70,12 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                         setBonusRate((rule.rate * 100).toString());
                         setCapAmount(rule.capAmount ? rule.capAmount.toString() : '');
                         setCheckJapan(rule.categories.includes('general_japan'));
+                        setCheckJapan(rule.categories.includes('general_japan'));
                         setCheckRegistration(rule.requiresRegistration || false);
                     }
+
+                    if (prog.startDate) setProgramStartDate(prog.startDate);
+                    if (prog.endDate) setProgramEndDate(prog.endDate);
                 }
             } else {
                 alert('找不到符合的卡片資料，請嘗試關鍵字（如：富邦 J, CUBE）');
@@ -93,8 +99,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             id: programId,
             cardId: cardId,
             name: activeProgram?.name || '預設權益',
-            startDate: activeProgram?.startDate || format(now, 'yyyy-MM-dd'),
-            endDate: activeProgram?.endDate || format(addYears(now, 2), 'yyyy-MM-dd'),
+            startDate: programStartDate,
+            endDate: programEndDate,
             baseRate: parseFloat(baseRate) / 100,
             bonusRules: hasBonus ? [{
                 id: activeRule?.id || crypto.randomUUID(),
@@ -239,6 +245,33 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             onChange={e => setForeignTxFee(e.target.value)}
                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                         />
+                    </div>
+                </div>
+
+                {/* Program Dates */}
+                <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
+                    <h2 className="text-sm font-bold text-gray-700">權益期間</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">開始日期</label>
+                            <input
+                                type="date"
+                                required
+                                value={programStartDate}
+                                onChange={e => setProgramStartDate(e.target.value)}
+                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">結束日期</label>
+                            <input
+                                type="date"
+                                required
+                                value={programEndDate}
+                                onChange={e => setProgramEndDate(e.target.value)}
+                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                            />
+                        </div>
                     </div>
                 </div>
 
