@@ -262,6 +262,9 @@ export default function QuickCalculator() {
                                 <option value="QUICPay">QUICPay</option>
                                 <option value="Physical Card">實體卡</option>
                                 <option value="Google Pay">Google Pay</option>
+                                <option value="PayPay (玉山Wallet)">PayPay (玉山Wallet)</option>
+                                <option value="PayPay (全支付)">PayPay (全支付)</option>
+                                <option value="PayPay (街口)">PayPay (街口)</option>
                             </select>
                         </div>
                     </div>
