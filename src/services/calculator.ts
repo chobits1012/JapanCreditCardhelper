@@ -50,30 +50,36 @@ export function calculateReward(
         netReward: 0,
     };
 
-    const program = getActiveProgram(card, transaction.date);
+    let program = getActiveProgram(card, transaction.date);
+
+    // Fallback if no active program found
     if (!program) {
-        // Check for specific expiry or future start to give better warnings
         if (card.programs.length > 0) {
-            // Sort by endDate to find the latest
-            const sortedByEnd = [...card.programs].sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
-            const latestProgram = sortedByEnd[0];
             const target = new Date(transaction.date);
 
+            // 1. Try finding expired program (Latest one)
+            const sortedByEnd = [...card.programs].sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
+            const latestProgram = sortedByEnd[0];
+
             if (target > new Date(latestProgram.endDate)) {
-                result.warnings.push(`此卡權益已過期 (有效期至 ${latestProgram.endDate})`);
-                return result;
+                program = latestProgram;
+                result.warnings.push(`此卡權益已過期 (有效期至 ${latestProgram.endDate} - 可能影響回饋準確度)`);
             }
 
-            // Sort by startDate to find earliest
-            const sortedByStart = [...card.programs].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-            const earliestProgram = sortedByStart[0];
+            // 2. Try finding future program (Earliest one) if still no program found
+            if (!program) {
+                const sortedByStart = [...card.programs].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+                const earliestProgram = sortedByStart[0];
 
-            if (target < new Date(earliestProgram.startDate)) {
-                result.warnings.push(`此權益尚未開始 (開始於 ${earliestProgram.startDate})`);
-                return result;
+                if (target < new Date(earliestProgram.startDate)) {
+                    program = earliestProgram;
+                    result.warnings.push(`此權益尚未開始 (開始於 ${earliestProgram.startDate} - 可能影響回饋準確度)`);
+                }
             }
         }
+    }
 
+    if (!program) {
         result.warnings.push('找不到此日期的適用權益');
         return result;
     }
