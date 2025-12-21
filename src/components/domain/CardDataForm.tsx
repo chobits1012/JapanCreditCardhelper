@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard, MerchantCategory } from '../../types';
-import { ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronLeft, Sparkles, Loader2, Plus, Trash2 } from 'lucide-react';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
 
@@ -10,13 +10,31 @@ interface CardDataFormProps {
     initialCard?: CreditCard;
 }
 
+interface BonusRuleState {
+    id: string;
+    name: string;
+    rate: string;
+    capAmount: string;
+    checkJapan: boolean;
+    requiresRegistration: boolean;
+}
+
 export default function CardDataForm({ onBack, initialCard }: CardDataFormProps) {
     const { addCard, updateCard } = useStore();
     const isEditMode = !!initialCard;
 
     // --- State Initialization ---
     const activeProgram = initialCard?.programs[0];
-    const activeRule = activeProgram?.bonusRules[0];
+
+    // Initialize Bonus Rules
+    const initialRules: BonusRuleState[] = activeProgram?.bonusRules.map(rule => ({
+        id: rule.id,
+        name: rule.name,
+        rate: (rule.rate * 100).toString(),
+        capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+        checkJapan: rule.categories.includes('general_japan'),
+        requiresRegistration: rule.requiresRegistration || false
+    })) || [];
 
     const [name, setName] = useState(initialCard?.name || '');
     const [bank, setBank] = useState(initialCard?.bank || '');
@@ -27,18 +45,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const [programEndDate, setProgramEndDate] = useState(activeProgram?.endDate || format(addYears(new Date(), 2), 'yyyy-MM-dd'));
     const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
 
-    // Bonus Rule State
-    const [hasBonus, setHasBonus] = useState(!!activeRule);
-    const [bonusName, setBonusName] = useState(activeRule?.name || '一般加碼');
-    const [bonusRate, setBonusRate] = useState(activeRule ? (activeRule.rate * 100).toString() : '3');
-    const [capAmount, setCapAmount] = useState<string>(activeRule?.capAmount ? activeRule.capAmount.toString() : '');
-
-    const [checkJapan, setCheckJapan] = useState(
-        activeRule
-            ? activeRule.categories.includes('general_japan')
-            : true
-    );
-    const [checkRegistration, setCheckRegistration] = useState(activeRule?.requiresRegistration || false);
+    // Bonus Rule State Array
+    const [bonusRules, setBonusRules] = useState<BonusRuleState[]>(initialRules);
 
     // Auto-fill State
     const [isSearching, setIsSearching] = useState(false);
@@ -64,14 +72,15 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     setBaseRate((prog.baseRate * 100).toString());
 
                     if (prog.bonusRules && prog.bonusRules.length > 0) {
-                        setHasBonus(true);
-                        const rule = prog.bonusRules[0];
-                        setBonusName(rule.name);
-                        setBonusRate((rule.rate * 100).toString());
-                        setCapAmount(rule.capAmount ? rule.capAmount.toString() : '');
-                        setCheckJapan(rule.categories.includes('general_japan'));
-                        setCheckJapan(rule.categories.includes('general_japan'));
-                        setCheckRegistration(rule.requiresRegistration || false);
+                        const newRules: BonusRuleState[] = prog.bonusRules.map(rule => ({
+                            id: crypto.randomUUID(),
+                            name: rule.name,
+                            rate: (rule.rate * 100).toString(),
+                            capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+                            checkJapan: rule.categories.includes('general_japan'),
+                            requiresRegistration: rule.requiresRegistration || false
+                        }));
+                        setBonusRules(newRules);
                     }
 
                     if (prog.startDate) setProgramStartDate(prog.startDate);
@@ -93,6 +102,18 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         const cardId = initialCard?.id || crypto.randomUUID();
         const programId = activeProgram?.id || crypto.randomUUID();
 
+        // Convert BonusRuleState back to Domain BonusRule
+        const domainBonusRules = bonusRules.map(ruleState => ({
+            id: ruleState.id,
+            name: ruleState.name,
+            rate: parseFloat(ruleState.rate) / 100,
+            categories: ruleState.checkJapan
+                ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[]
+                : [],
+            capAmount: ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
+            requiresRegistration: ruleState.requiresRegistration,
+        }));
+
         const updatedProgram = {
             id: programId,
             cardId: cardId,
@@ -100,14 +121,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             startDate: programStartDate,
             endDate: programEndDate,
             baseRate: parseFloat(baseRate) / 100,
-            bonusRules: hasBonus ? [{
-                id: activeRule?.id || crypto.randomUUID(),
-                name: bonusName,
-                rate: parseFloat(bonusRate) / 100,
-                categories: checkJapan ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[] : [],
-                capAmount: capAmount ? parseInt(capAmount) : undefined,
-                requiresRegistration: checkRegistration,
-            }] : []
+            bonusRules: domainBonusRules
         };
 
         const cardData: CreditCard = {
@@ -126,6 +140,27 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             addCard(cardData);
         }
         onBack();
+    };
+
+    const addRule = () => {
+        setBonusRules([...bonusRules, {
+            id: crypto.randomUUID(),
+            name: '新加碼活動',
+            rate: '3',
+            capAmount: '',
+            checkJapan: false,
+            requiresRegistration: false
+        }]);
+    };
+
+    const removeRule = (id: string) => {
+        setBonusRules(bonusRules.filter(r => r.id !== id));
+    };
+
+    const updateRule = (id: string, field: keyof BonusRuleState, value: any) => {
+        setBonusRules(bonusRules.map(r =>
+            r.id === id ? { ...r, [field]: value } : r
+        ));
     };
 
     return (
@@ -273,71 +308,90 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     </div>
                 </div>
 
-                {/* Bonus Config */}
-                <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-sm font-bold text-gray-700">特別加碼 (選填)</h2>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" checked={hasBonus} onChange={e => setHasBonus(e.target.checked)} className="sr-only peer" />
-                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
+                {/* Bonus Config - Multiple Rules */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">特別加碼活動</label>
+                        <button
+                            type="button"
+                            onClick={addRule}
+                            className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-bold px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 transition-all active:scale-95"
+                        >
+                            <Plus className="w-3 h-3" />
+                            新增活動
+                        </button>
                     </div>
 
-                    {hasBonus && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">加碼活動名稱</label>
-                                <input
-                                    type="text"
-                                    value={bonusName}
-                                    onChange={e => setBonusName(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">加碼回饋率 (%)</label>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        value={bonusRate}
-                                        onChange={e => setBonusRate(e.target.value)}
-                                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                    />
+                    <div className="space-y-4">
+                        {bonusRules.map((rule, index) => (
+                            <div key={rule.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 relative group">
+                                <div className="absolute top-4 right-4 text-gray-300 hover:text-red-500 cursor-pointer transition-colors" onClick={() => removeRule(rule.id)}>
+                                    <Trash2 className="w-4 h-4" />
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">回饋上限 (選填)</label>
-                                    <input
-                                        type="number"
-                                        placeholder="無上限"
-                                        value={capAmount}
-                                        onChange={e => setCapAmount(e.target.value)}
-                                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                    />
+                                <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">活動 #{index + 1}</h3>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">加碼活動名稱</label>
+                                        <input
+                                            type="text"
+                                            value={rule.name}
+                                            onChange={e => updateRule(rule.id, 'name', e.target.value)}
+                                            className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">加碼回饋率 (%)</label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={rule.rate}
+                                                onChange={e => updateRule(rule.id, 'rate', e.target.value)}
+                                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">回饋上限 (選填)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="無上限"
+                                                value={rule.capAmount}
+                                                onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
+                                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 space-y-2">
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={rule.checkJapan}
+                                                onChange={e => updateRule(rule.id, 'checkJapan', e.target.checked)}
+                                                className="rounded text-primary-600 focus:ring-primary-500"
+                                            />
+                                            <span className="text-sm text-gray-700">包含所有日本通路 (實體/藥妝/超商)</span>
+                                        </label>
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={rule.requiresRegistration}
+                                                onChange={e => updateRule(rule.id, 'requiresRegistration', e.target.checked)}
+                                                className="rounded text-sakura-500 focus:ring-sakura-500"
+                                            />
+                                            <span className="text-sm text-gray-700">此活動需要登錄</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="pt-2 space-y-2">
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={checkJapan}
-                                        onChange={e => setCheckJapan(e.target.checked)}
-                                        className="rounded text-primary-600 focus:ring-primary-500"
-                                    />
-                                    <span className="text-sm text-gray-700">包含所有日本通路 (實體/藥妝/超商)</span>
-                                </label>
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={checkRegistration}
-                                        onChange={e => setCheckRegistration(e.target.checked)}
-                                        className="rounded text-sakura-500 focus:ring-sakura-500"
-                                    />
-                                    <span className="text-sm text-gray-700">此活動需要登錄</span>
-                                </label>
+                        ))}
+
+                        {bonusRules.length === 0 && (
+                            <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-400 text-sm">
+                                尚未新增任何加碼活動
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 <div className="pt-4">
