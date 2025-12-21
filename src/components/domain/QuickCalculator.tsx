@@ -31,8 +31,8 @@ export default function QuickCalculator() {
             if (currency === 'JPY') {
                 setIsRateLoading(true);
                 try {
-                    // Try to fetch live rate
-                    const response = await fetch('https://api.frankfurter.app/latest?from=JPY&to=TWD');
+                    // Try to fetch live rate from ExchangeRate-API (Frankfurter doesn't support TWD consistently)
+                    const response = await fetch('https://open.er-api.com/v6/latest/JPY');
                     if (!response.ok) throw new Error('Network response was not ok');
 
                     const data = await response.json();
@@ -181,8 +181,8 @@ export default function QuickCalculator() {
                         <div className="flex justify-between items-center">
                             <label className="text-[10px] font-medium text-gray-500 uppercase">匯率 (JPY to TWD)</label>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${rateSource === 'live'
-                                    ? 'bg-emerald-100 text-emerald-600 border border-emerald-200'
-                                    : 'bg-orange-100 text-orange-600 border border-orange-200'
+                                ? 'bg-emerald-100 text-emerald-600 border border-emerald-200'
+                                : 'bg-orange-100 text-orange-600 border border-orange-200'
                                 }`}>
                                 {isRateLoading ? '更新中...' : rateSource === 'live' ? '● 即時匯率' : '● 預設匯率'}
                             </span>
