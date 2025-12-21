@@ -9,9 +9,9 @@ export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction } = useStore();
 
     // Form State
-    const [amount, setAmount] = useState<number>(10000);
+    const [amount, setAmount] = useState<number | ''>(10000);
     const [currency, setCurrency] = useState<'JPY' | 'TWD'>('JPY');
-    const [exchangeRate, setExchangeRate] = useState<number>(0.22);
+    const [exchangeRate, setExchangeRate] = useState<number | ''>(0.22);
     const [isRateLoading, setIsRateLoading] = useState<boolean>(false);
     const [rateSource, setRateSource] = useState<'default' | 'live'>('default');
     const [date, setDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
@@ -89,9 +89,9 @@ export default function QuickCalculator() {
     const createBaseTransaction = () => ({
         id: crypto.randomUUID(),
         date,
-        amount,
+        amount: Number(amount) || 0,
         currency,
-        exchangeRate, // Use state
+        exchangeRate: Number(exchangeRate) || 0, // Use state
         merchantName,
         category,
         paymentMethod,
@@ -184,7 +184,7 @@ export default function QuickCalculator() {
                         <input
                             type="number"
                             value={amount}
-                            onChange={(e) => setAmount(Number(e.target.value))}
+                            onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                             className="flex-1 min-w-0 px-4 py-4 bg-transparent border-none text-2xl font-bold text-slate-800 placeholder-slate-300 focus:ring-0 outline-none"
                         />
                         <div className="flex items-center pr-3 space-x-1 shrink-0">
@@ -217,7 +217,7 @@ export default function QuickCalculator() {
                             step="0.0001"
                             value={exchangeRate}
                             onChange={(e) => {
-                                setExchangeRate(Number(e.target.value));
+                                setExchangeRate(e.target.value === '' ? '' : Number(e.target.value));
                                 setRateSource('default'); // If user manually edits, treat as custom/default
                             }}
                             className="w-full px-4 py-2 glass-input text-sm text-gray-700 font-mono"
