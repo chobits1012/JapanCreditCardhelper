@@ -397,7 +397,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 <div className="pt-4">
                     <button
                         type="submit"
-                        className="w-full py-3 bg-primary-900 hover:bg-primary-800 text-white font-bold rounded-xl shadow-lg shadow-primary-200 transition-all active:scale-95"
+                        className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg shadow-gray-200 transition-all active:scale-95"
                     >
                         {isEditMode ? '儲存變更' : '新增卡片'}
                     </button>
