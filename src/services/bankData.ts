@@ -24,6 +24,8 @@ export interface BankDataService {
     fetchCardTemplate: (keyword: string) => Promise<Partial<CreditCard> | null>;
 }
 
+import { CARD_TEMPLATES } from '../data/cardTemplates';
+
 // Mock Implementation stub
 export const MockBankService: BankDataService = {
     checkUpdates: async (card) => {
@@ -44,56 +46,24 @@ export const MockBankService: BankDataService = {
     },
 
     getSupportedCards: async () => {
-        return ['fubon-j', 'federal-gilgo', 'cathay-cube'];
+        return CARD_TEMPLATES.map(c => c.name || '');
     },
 
     fetchCardTemplate: async (keyword) => {
         await new Promise(resolve => setTimeout(resolve, 600)); // Delay
 
-        if (keyword.includes('富邦') || keyword.includes('J') || keyword.toLowerCase().includes('j')) {
-            return {
-                name: '富邦 J 卡',
-                bank: '台北富邦銀行',
-                programs: [{
-                    id: 'temp-prog-j',
-                    cardId: 'temp',
-                    name: '日韓旅遊回饋',
-                    startDate: '2025-01-01',
-                    endDate: '2025-06-30',
-                    baseRate: 0.01,
-                    bonusRules: [{
-                        id: 'temp-rule-j',
-                        name: '日韓實體消費',
-                        rate: 0.03,
-                        categories: ['general_japan'],
-                        capAmount: undefined,
-                        requiresRegistration: true
-                    }]
-                }]
-            };
-        }
+        const lowerKeyword = keyword.toLowerCase();
 
-        if (keyword.includes('CUBE') || keyword.includes('國泰')) {
-            return {
-                name: 'CUBE 卡',
-                bank: '國泰世華銀行',
-                programs: [{
-                    id: 'temp-prog-cube',
-                    cardId: 'temp',
-                    name: '趣旅行權益',
-                    startDate: '2025-01-01',
-                    endDate: '2025-12-31',
-                    baseRate: 0.003,
-                    bonusRules: [{
-                        id: 'temp-rule-cube',
-                        name: '指定旅遊通路',
-                        rate: 0.03,
-                        categories: ['general_japan', 'hotel', 'airline'],
-                        capAmount: undefined,
-                        requiresRegistration: false
-                    }]
-                }]
-            };
+        // Find matched template
+        const matched = CARD_TEMPLATES.find(t =>
+            (t.name && t.name.toLowerCase().includes(lowerKeyword)) ||
+            (t.bank && t.bank.toLowerCase().includes(lowerKeyword)) ||
+            (lowerKeyword.includes('j') && t.name?.includes('J')) // Special case for "J card" generic search
+        );
+
+        if (matched) {
+            // Return a deep copy to avoid mutation
+            return JSON.parse(JSON.stringify(matched));
         }
 
         return null;
