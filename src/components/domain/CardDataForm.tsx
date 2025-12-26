@@ -4,6 +4,7 @@ import type { CreditCard, MerchantCategory } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Trash2 } from 'lucide-react';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
+import ConfirmModal from '../ui/ConfirmModal';
 
 interface CardDataFormProps {
     onBack: () => void;
@@ -22,7 +23,7 @@ interface BonusRuleState {
 }
 
 export default function CardDataForm({ onBack, initialCard }: CardDataFormProps) {
-    const { addCard, updateCard } = useStore();
+    const { addCard, updateCard, removeCard } = useStore();
     const isEditMode = !!initialCard;
 
     // --- State Initialization ---
@@ -54,6 +55,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     // Auto-fill State
     const [isSearching, setIsSearching] = useState(false);
+
+    // Delete Confirmation State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleAutoFill = async () => {
         if (!bank && !name) {
@@ -173,6 +177,13 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         setBonusRules(bonusRules.map(r =>
             r.id === id ? { ...r, [field]: value } : r
         ));
+    };
+
+    const handleConfirmDelete = () => {
+        if (initialCard) {
+            removeCard(initialCard.id);
+            onBack();
+        }
     };
 
     return (
@@ -435,12 +446,32 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                         {isEditMode ? '儲存變更' : '新增卡片'}
                     </button>
                     {isEditMode && (
-                        <p className="text-center text-xs text-gray-400 mt-2">
-                            注意：編輯將會覆蓋此卡片目前的預設權益設定
-                        </p>
+                        <div className="mt-4 space-y-2">
+                            <p className="text-center text-xs text-gray-400">
+                                注意：編輯將會覆蓋此卡片目前的預設權益設定
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="w-full py-3 text-red-500 font-bold text-sm bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                            >
+                                刪除此卡片
+                            </button>
+                        </div>
                     )}
                 </div>
             </form>
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="確定要刪除嗎？"
+                message={`您即將刪除「${name}」。此動作無法復原。`}
+                confirmText="確認刪除"
+                cancelText="取消"
+                isDanger={true}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 }

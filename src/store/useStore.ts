@@ -12,6 +12,7 @@ interface AppState {
     addTransaction: (t: Transaction) => void;
     addCard: (c: CreditCard) => void;
     updateCard: (c: CreditCard) => void;
+    removeCard: (cardId: string) => void;
     toggleCard: (cardId: string) => void;
     removeTransaction: (transactionId: string) => void;
     resetTransactions: () => void;
@@ -38,6 +39,11 @@ export const useStore = create<AppState>()(
 
             updateCard: (updatedCard) => set((state) => ({
                 cards: state.cards.map((c) => c.id === updatedCard.id ? updatedCard : c)
+            })),
+
+            removeCard: (cardId) => set((state) => ({
+                cards: state.cards.filter((c) => c.id !== cardId),
+                activeCardIds: state.activeCardIds.filter((id) => id !== cardId)
             })),
 
             toggleCard: (cardId) => set((state) => {
