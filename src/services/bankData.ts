@@ -55,11 +55,15 @@ export const MockBankService: BankDataService = {
         const lowerKeyword = keyword.toLowerCase();
 
         // Find matched template
-        const matched = CARD_TEMPLATES.find(t =>
-            (t.name && t.name.toLowerCase().includes(lowerKeyword)) ||
-            (t.bank && t.bank.toLowerCase().includes(lowerKeyword)) ||
-            (lowerKeyword.includes('j') && t.name?.includes('J')) // Special case for "J card" generic search
-        );
+        const parts = lowerKeyword.split(/\s+/).filter(Boolean);
+
+        // Find matched template
+        const matched = CARD_TEMPLATES.find(t => {
+            const searchTarget = `${t.bank || ''} ${t.name || ''}`.toLowerCase();
+            // Check if every part of the search keyword exists in the bank+name string
+            // Also keep the special check for 'J' if needed, or rely on the general check for 'j' in '富邦 j'
+            return parts.every(part => searchTarget.includes(part));
+        });
 
         if (matched) {
             // Return a deep copy to avoid mutation

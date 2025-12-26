@@ -63,7 +63,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
         setIsSearching(true);
         try {
-            const keyword = `${bank} ${name}`;
+            const keyword = [bank, name].filter(Boolean).join(' ');
             const template = await MockBankService.fetchCardTemplate(keyword);
 
             if (template) {
