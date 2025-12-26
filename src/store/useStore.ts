@@ -56,38 +56,57 @@ export const useStore = create<AppState>()(
             resetTransactions: () => set({ transactions: [] }),
 
             getRuleUsage: (ruleId: string, targetDateStr: string, statementDate: number = 31) => {
-                const { transactions } = get();
+                const { transactions, cards } = get();
 
-                // Parse the target date (when we want to check usage)
-                // We use local time concept for simplicity as inputs are "YYYY-MM-DD"
+                // 1. Find the Rule Definition to check its capPeriod
+                // We need to search through all cards -> programs -> bonusRules
+                let ruleDef: any = null;
+                let programDef: any = null;
+
+                for (const card of cards) {
+                    for (const prog of card.programs) {
+                        const found = prog.bonusRules.find(r => r.id === ruleId);
+                        if (found) {
+                            ruleDef = found;
+                            programDef = prog;
+                            break;
+                        }
+                    }
+                    if (ruleDef) break;
+                }
+
+                // Parse target date
                 const targetDate = new Date(targetDateStr);
                 const targetDay = targetDate.getDate();
                 const targetYear = targetDate.getFullYear();
-                const targetMonth = targetDate.getMonth(); // 0-indexed
+                const targetMonth = targetDate.getMonth();
 
                 let start: Date;
                 let end: Date;
 
-                // Billing Cycle Logic
-                // If statementDate is 27.
-                // Case A: target is 5/15. (15 <= 27). Cycle: 4/28 - 5/27.
-                // Case B: target is 5/28. (28 > 27).  Cycle: 5/28 - 6/27.
-
-                if (targetDay > statementDate) {
-                    // Current cycle started this month on (statementDate + 1)
-                    start = new Date(targetYear, targetMonth, statementDate + 1);
-                    // Ends next month on statementDate
-                    end = new Date(targetYear, targetMonth + 1, statementDate);
+                // 2. Determine Calculation Period
+                if (ruleDef && ruleDef.capPeriod === 'campaign' && programDef) {
+                    // Campaign Period: Use Program Start/End Dates
+                    start = new Date(programDef.startDate);
+                    end = new Date(programDef.endDate);
                 } else {
-                    // Current cycle started last month
-                    start = new Date(targetYear, targetMonth - 1, statementDate + 1);
-                    // Ends this month on statementDate
-                    end = new Date(targetYear, targetMonth, statementDate);
+                    // Default / Monthly: Billing Cycle Logic
+                    if (targetDay > statementDate) {
+                        // Current cycle started this month on (statementDate + 1)
+                        start = new Date(targetYear, targetMonth, statementDate + 1);
+                        // Ends next month on statementDate
+                        end = new Date(targetYear, targetMonth + 1, statementDate);
+                    } else {
+                        // Current cycle started last month
+                        start = new Date(targetYear, targetMonth - 1, statementDate + 1);
+                        // Ends this month on statementDate
+                        end = new Date(targetYear, targetMonth, statementDate);
+                    }
                 }
 
                 return transactions.reduce((sum, t) => {
                     const tDate = new Date(t.date);
-                    // Check if transaction falls within the billing cycle
+                    // Check if transaction falls within the determined period
                     if (tDate >= start && tDate <= end) {
                         return sum + (t.ruleUsageMap?.[ruleId] || 0);
                     }

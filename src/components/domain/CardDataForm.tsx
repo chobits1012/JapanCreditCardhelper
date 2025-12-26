@@ -15,8 +15,10 @@ interface BonusRuleState {
     name: string;
     rate: string;
     capAmount: string;
+    capPeriod: 'monthly' | 'campaign';
     checkJapan: boolean;
     requiresRegistration: boolean;
+    specificMerchants: string; // New: comma separated
 }
 
 export default function CardDataForm({ onBack, initialCard }: CardDataFormProps) {
@@ -32,8 +34,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         name: rule.name,
         rate: (rule.rate * 100).toString(),
         capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+        capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
         checkJapan: rule.categories.includes('general_japan'),
-        requiresRegistration: rule.requiresRegistration || false
+        requiresRegistration: rule.requiresRegistration || false,
+        specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : ''
     })) || [];
 
     const [name, setName] = useState(initialCard?.name || '');
@@ -77,8 +81,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             name: rule.name,
                             rate: (rule.rate * 100).toString(),
                             capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+                            capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
                             checkJapan: rule.categories.includes('general_japan'),
-                            requiresRegistration: rule.requiresRegistration || false
+                            requiresRegistration: rule.requiresRegistration || false,
+                            specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : ''
                         }));
                         setBonusRules(newRules);
                     }
@@ -111,7 +117,11 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[]
                 : [],
             capAmount: ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
+            capPeriod: ruleState.capPeriod,
             requiresRegistration: ruleState.requiresRegistration,
+            specificMerchants: ruleState.specificMerchants
+                ? ruleState.specificMerchants.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+                : undefined
         }));
 
         const updatedProgram = {
@@ -148,8 +158,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             name: '新加碼活動',
             rate: '3',
             capAmount: '',
+            capPeriod: 'monthly',
             checkJapan: false,
-            requiresRegistration: false
+            requiresRegistration: false,
+            specificMerchants: ''
         }]);
     };
 
@@ -353,14 +365,35 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">回饋上限 (選填)</label>
-                                            <input
-                                                type="number"
-                                                placeholder="無上限"
-                                                value={rule.capAmount}
-                                                onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    placeholder="無上限"
+                                                    value={rule.capAmount}
+                                                    onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
+                                                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                                />
+                                                <select
+                                                    value={rule.capPeriod}
+                                                    onChange={e => updateRule(rule.id, 'capPeriod', e.target.value)}
+                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-24 flex-shrink-0"
+                                                >
+                                                    <option value="monthly">/月</option>
+                                                    <option value="campaign">/總</option>
+                                                </select>
+                                            </div>
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">指定商店 (選填，逗號分隔)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="例如: 7-11, Disney, Bic Camera"
+                                            value={rule.specificMerchants}
+                                            onChange={e => updateRule(rule.id, 'specificMerchants', e.target.value)}
+                                            className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                        />
                                     </div>
                                     <div className="pt-2 space-y-2">
                                         <label className="flex items-center space-x-2">

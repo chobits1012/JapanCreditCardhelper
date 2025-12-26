@@ -26,10 +26,11 @@ export interface BonusRule {
     paymentMethods?: string[];      // 限制支付方式 (例如 ["Apple Pay", "QUICPay"])
     minAmount?: number;             // 最低消費門檻
     requiresRegistration?: boolean; // 是否需要登錄 (New)
+    note?: string;                  // 備註 (New)
 
     // 上限設定
     capAmount?: number;             // 回饋上限金額 (undefined 代表無上限)
-    capPeriod?: 'monthly' | 'campaign' | 'annual'; // 上限週期
+    capPeriod?: 'monthly' | 'campaign' | 'annual'; // 上限週期 (New: campaign = 活動期間總上限)
 
     // 狀態追蹤 (Runtime calculated - NOT persisted in rule definition)
     // currentUsage is tracked separately in UserActivity state

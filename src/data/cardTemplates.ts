@@ -71,6 +71,61 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
                     requiresRegistration: false
                 }
             ]
+        }, {
+            id: 'template-jiho-2026',
+            cardId: 'template-jiho',
+            name: '日本消費權益 (2026)',
+            startDate: '2026-01-01',
+            endDate: '2026-06-30',
+            baseRate: 0.025, // 日本消費 2.5%
+            note: '日本消費 2.5% (無上限)',
+            bonusRules: [
+                {
+                    id: 'rule-jiho-2026-apple-pay-reg',
+                    name: 'Apple Pay 加碼 (需登錄)',
+                    rate: 0.015, // 1.5%
+                    categories: [],
+                    paymentMethods: ['Apple Pay'],
+                    capAmount: 600,
+                    capPeriod: 'monthly',
+                    requiresRegistration: true
+                },
+                {
+                    id: 'rule-jiho-2026-apple-pay-high',
+                    name: 'Apple Pay 滿額加碼 (前月三萬)',
+                    rate: 0.01, // 1%
+                    categories: [],
+                    paymentMethods: ['Apple Pay'],
+                    capAmount: 200,
+                    capPeriod: 'monthly',
+                    requiresRegistration: false,
+                    note: '前月帳單滿 3 萬元'
+                },
+                {
+                    id: 'rule-jiho-2026-top11',
+                    name: '日本 11 大熱門商店加碼 (活動期間 600)',
+                    rate: 0.03, // 3%
+                    categories: ['convenience', 'department', 'drugstore', 'electronics'],
+                    specificMerchants: [
+                        '7-ELEVEN', 'FamilyMart', 'LAWSON',
+                        'Disney', 'Universal Studios', 'USJ', 'Tokyo Disney',
+                        'Aeon', 'Yodobashi', 'Bic Camera', 'Don Quijote',
+                        'Mitsukoshi', 'Takashimaya', '唐吉軻德'
+                    ],
+                    capAmount: 600,
+                    capPeriod: 'campaign', // Total cap for 6 months
+                    requiresRegistration: false
+                },
+                {
+                    id: 'rule-jiho-2026-new-user',
+                    name: '新戶日本實體加碼 (活動期間 600)',
+                    rate: 0.03, // 3%
+                    categories: ['general_japan'],
+                    capAmount: 600,
+                    capPeriod: 'campaign',
+                    requiresRegistration: false
+                }
+            ]
         }]
     },
     {
