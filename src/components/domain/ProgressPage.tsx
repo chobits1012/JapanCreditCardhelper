@@ -73,7 +73,6 @@ export default function ProgressPage() {
                         if (rulesWithCaps.length === 0) return null;
 
                         return (
-                        return (
                             <div key={card.id} className="relative group">
                                 {/* Decorative Gradient Border/Glow */}
                                 <div className="absolute -inset-0.5 bg-gradient-to-br from-indigo-300/30 via-purple-300/30 to-rose-300/30 rounded-[1.2rem] opacity-70 blur-sm group-hover:opacity-100 transition-all duration-500"></div>
