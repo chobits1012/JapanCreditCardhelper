@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CreditCard, Transaction } from '../types';
 import { MOCK_CARDS } from '../data/mockData';
+import { CARD_TEMPLATES } from '../data/cardTemplates';
 
 interface AppState {
     cards: CreditCard[];
@@ -129,13 +130,13 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'credit-card-helper-storage',
-            version: 2,
+            version: 3,
             migrate: (persistedState: any, version) => {
-                if (version === 0 || version === undefined || version === 1) {
-                    // Migration to v2: Dual Base Rates & Region
-                    // Convert old `baseRate` to `baseRateOverseas` and `baseRateDomestic`
+                let state = persistedState;
 
-                    const existingCards = persistedState.cards || [];
+                // Migration to v2: Dual Base Rates & Region
+                if (version === undefined || version < 2) {
+                    const existingCards = state.cards || [];
                     const migratedCards = existingCards.map((card: any) => ({
                         ...card,
                         programs: card.programs.map((prog: any) => ({
@@ -144,9 +145,7 @@ export const useStore = create<AppState>()(
                             baseRateOverseas: prog.baseRateOverseas ?? prog.baseRate ?? 0.01,
                             // Default domestic to overseas (safe fallback) or 1%
                             baseRateDomestic: prog.baseRateDomestic ?? prog.baseRate ?? 0.01,
-                            // Migrate Rules: Default to 'japan' if not set, 
-                            // but actually 'global' might be safer? No, this was a "Japan Travel App", 
-                            // so existing rules are likely Japan-specific.
+                            // Migrate Rules: Default to 'japan' if not set
                             bonusRules: prog.bonusRules.map((rule: any) => ({
                                 ...rule,
                                 region: rule.region || 'japan'
@@ -154,20 +153,44 @@ export const useStore = create<AppState>()(
                         }))
                     }));
 
-                    // Also handle Missing Virtual Cards logic from v1 (copy-paste logic to be safe)
+                    // Logic to add missing virtual cards if needed
                     const virtualCardIds = ['card_virtual_allplus', 'card_virtual_jko'];
                     const missingCards = MOCK_CARDS.filter(mock =>
                         virtualCardIds.includes(mock.id) &&
                         !migratedCards.some((existing: CreditCard) => existing.id === mock.id)
                     );
 
-                    return {
-                        ...persistedState,
+                    state = {
+                        ...state,
                         cards: [...migratedCards, ...missingCards],
-                        mode: persistedState.mode || 'travel'
+                        mode: state.mode || 'travel'
                     };
                 }
-                return persistedState;
+
+                // Migration to v3: Refresh Jihe Card Rules (Add paymentMethod constraints)
+                if (version === undefined || version < 3) {
+                    const templateJiho = CARD_TEMPLATES.find(t => t.name === '吉鶴卡');
+                    if (templateJiho && templateJiho.programs) {
+                        const existingCards = state.cards || [];
+                        const updatedCards = existingCards.map((card: any) => {
+                            if (card.name === '吉鶴卡') {
+                                // Refresh programs from template to get new rules (with paymentMethods)
+                                return {
+                                    ...card,
+                                    programs: templateJiho.programs
+                                };
+                            }
+                            return card;
+                        });
+
+                        state = {
+                            ...state,
+                            cards: updatedCards
+                        };
+                    }
+                }
+
+                return state;
             },
         }
     )
