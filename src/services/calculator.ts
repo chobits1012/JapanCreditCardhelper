@@ -119,20 +119,23 @@ export function calculateReward(
             continue;
         }
 
-        const isCategoryMatch = rule.categories.includes(transaction.category);
-        const isMerchantMatch = rule.specificMerchants
-            ? rule.specificMerchants.some(m => transaction.merchantName.includes(m))
-            : true; // If no specific merchants listed, it's a category-wide rule (or matches per category logic)
+        // CHECK 1: Category Match
+        // If rule.categories is undefined or empty array => Match ALL categories
+        const isCategoryMatch = (!rule.categories || rule.categories.length === 0)
+            ? true
+            : rule.categories.includes(transaction.category);
 
-        // Refined logic: If specificMerchants is defined, it MUST match. 
-        // If not defined, we rely on Category. 
-        // However, usually "Category Match" OR "Merchant Match" depends on rule.
-        // Let's assume: matches Category AND matches Merchant (if specified).
+        // CHECK 2: Merchant Match
+        // If specificMerchants is undefined or empty array => Match ALL merchants
+        const isMerchantMatch = (!rule.specificMerchants || rule.specificMerchants.length === 0)
+            ? true
+            : rule.specificMerchants.some(m => transaction.merchantName.includes(m));
 
-        // Also check Payment Method
-        const isPaymentMatch = rule.paymentMethods
-            ? rule.paymentMethods.includes(transaction.paymentMethod)
-            : true;
+        // CHECK 3: Payment Method Match
+        // If paymentMethods is undefined or empty array => Match ALL methods
+        const isPaymentMatch = (!rule.paymentMethods || rule.paymentMethods.length === 0)
+            ? true
+            : rule.paymentMethods.includes(transaction.paymentMethod);
 
         // Check Min Amount
         const isAmountMatch = rule.minAmount

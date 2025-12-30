@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import ConfirmModal from '../ui/ConfirmModal';
 
 export default function ProgressPage() {
-    const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction, mode } = useStore();
+    const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction, resetTransactions, mode } = useStore();
     const activeCards = cards.filter(c => activeCardIds.includes(c.id));
 
     // Sort transactions by date desc
@@ -115,7 +115,23 @@ export default function ProgressPage() {
 
             {/* Transaction History Section */}
             <div className="pt-4 border-t border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">交易紀錄</h2>
+                <header className="flex justify-between items-end mb-4">
+                    <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
+                    {sortedTransactions.length > 0 && (
+                        <button
+                            onClick={() => openModal(
+                                '清空消費紀錄',
+                                '確定要清除所有已紀錄的消費嗎？\n您的卡片設定與自訂資料「不會」被刪除，僅清除進度條與交易列表。',
+                                () => resetTransactions(),
+                                true
+                            )}
+                            className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                        >
+                            清空紀錄
+                        </button>
+                    )}
+                </header>
+
                 {sortedTransactions.length === 0 ? (
                     <div className="text-center py-8 text-gray-400 text-sm">
                         尚未有紀錄
@@ -125,7 +141,7 @@ export default function ProgressPage() {
                         {sortedTransactions.map(tx => {
                             const card = cards.find(c => c.id === tx.cardId);
                             return (
-                                <div key={tx.id} className="glass-card p-3 rounded-xl flex justify-between items-center">
+                                <div key={tx.id} className="glass-card p-3 rounded-xl flex justify-between items-center group">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
                                             <span className="text-xs font-bold text-gray-400">{format(new Date(tx.date), 'MM/dd')}</span>
@@ -144,11 +160,11 @@ export default function ProgressPage() {
                                         <button
                                             onClick={() => openModal(
                                                 '刪除紀錄',
-                                                '確定要刪除這筆交易紀錄嗎？\n刪除後將無法復原。',
+                                                '確定要刪除這筆交易紀錄嗎？\n刪除後進度將會扣除，但無法復原。',
                                                 () => removeTransaction(tx.id),
                                                 true
                                             )}
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-60 group-hover:opacity-100"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -161,20 +177,20 @@ export default function ProgressPage() {
             </div>
 
             {/* Reset Data Section */}
-            <div className="pt-8 text-center pb-8">
+            <div className="pt-8 text-center pb-8 border-t border-gray-100 mt-8">
                 <button
                     onClick={() => openModal(
-                        '重置所有資料',
-                        '警告：確定要清空所有資料嗎？\n此動作將刪除所有交易紀錄與自訂卡片，App 將恢復預設狀態。',
+                        '重置應用程式',
+                        '警告：這是用來修復嚴重錯誤的選項。\n確定要重置整個應用程式嗎？\n\n這將會：\n1. 刪除所有交易紀錄\n2. 刪除所有自訂卡片與設定\n3. 恢復到剛安裝時的狀態',
                         () => {
                             localStorage.clear();
                             window.location.reload();
                         },
                         true
                     )}
-                    className="text-xs text-gray-400 hover:text-red-500 underline transition-colors"
+                    className="text-[10px] text-gray-300 hover:text-red-400 underline transition-colors"
                 >
-                    重置所有資料 (Reset Data)
+                    重置應用程式 (Factory Reset)
                 </button>
             </div>
         </div>
