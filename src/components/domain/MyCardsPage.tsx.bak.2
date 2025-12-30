@@ -29,55 +29,35 @@ const CardLogo = () => {
 
 export default function MyCardsPage() {
     const { cards, activeCardIds, toggleCard, removeCard } = useStore();
-
-    // View States
     const [isAdding, setIsAdding] = useState(false);
     const [selectedCard, setSelectedCard] = useState<CreditCard | null>(null);
-    const [isDetailOpen, setIsDetailOpen] = useState(false); // Controls transition
-
-    const [isEditing, setIsEditing] = useState(false);
     const [cardToDelete, setCardToDelete] = useState<CreditCard | null>(null);
-
-    // --- Transition Helpers ---
-    const handleOpenDetail = (card: CreditCard) => {
-        setSelectedCard(card);
-        // Small timeout to allow render, then slide up
-        setTimeout(() => setIsDetailOpen(true), 10);
-    };
-
-    const handleCloseDetail = () => {
-        setIsDetailOpen(false);
-        // Wait for slide down transition to finish before unmounting (optional, 
-        // but here we might just hide it or keep it until fully closed if we want perfect exit.
-        // For simplicity, we just rely on CSS transition duration).
-        setTimeout(() => {
-            setSelectedCard(null);
-            setIsEditing(false); // Reset edit mode too
-        }, 300);
-    };
-    // --------------------------
+    const [isEditing, setIsEditing] = useState(false);
 
     if (isAdding) {
         return <CardDataForm onBack={() => setIsAdding(false)} />;
     }
 
-    // Logic for Editing within the Detail View Context or Separate?
-    // User flow: List -> Detail -> Edit -> Detail -> List
-    // If Editing, we can just replace the DetailView content or show over it.
-    // For now, let's keep Edit simple: if isEditing is true, we show CardDataForm.
-    // To keep the "slide over" feel, maybe we can just render it normally.
     if (isEditing && selectedCard) {
         return <CardDataForm
             initialCard={selectedCard}
-            onBack={() => setIsEditing(false)}
+            onBack={() => {
+                setIsEditing(false);
+                setSelectedCard(null);
+            }}
         />;
     }
 
-    // REMOVED early return for DetailView to allow background rendering
-
+    if (selectedCard) {
+        return <CardDetailView
+            card={selectedCard}
+            onBack={() => setSelectedCard(null)}
+            onEdit={() => setIsEditing(true)}
+        />;
+    }
 
     return (
-        <div className="max-w-md mx-auto p-4 pb-24 min-h-screen relative overflow-hidden">
+        <div className="max-w-md mx-auto p-4 pb-24 min-h-screen">
             {/* Header Area */}
             <div className="flex items-center justify-between mb-6 pt-2">
                 <div>
@@ -116,7 +96,7 @@ export default function MyCardsPage() {
                                 {/* The Card Face */}
                                 <div className="min-w-full h-full snap-center pl-0.5 pr-0.5 py-1">
                                     <div
-                                        onClick={() => handleOpenDetail(card)}
+                                        onClick={() => setSelectedCard(card)}
                                         className={`w-full h-full rounded-2xl p-5 relative overflow-hidden transition-all duration-300 flex flex-col justify-between cursor-pointer shadow-lg
                                             ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
                                         `}
@@ -139,17 +119,15 @@ export default function MyCardsPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Status Toggle (Bouncy Animation Added) */}
+                                            {/* Status Toggle (Stop propagation) */}
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     toggleCard(card.id);
                                                 }}
-                                                className={`w-10 h-6 rounded-full p-1 transition-all duration-300 flex items-center active:scale-90 active:rotate-3 ease-out
-                                                    ${isActive ? 'bg-white/90 justify-end shadow-md' : 'bg-black/20 justify-start'}
-                                                `}
+                                                className={`w-10 h-6 rounded-full p-1 transition-all duration-300 flex items-center ${isActive ? 'bg-white/90 justify-end' : 'bg-black/20 justify-start'}`}
                                             >
-                                                <div className={`w-4 h-4 rounded-full shadow-sm transition-all duration-300 ${isActive ? 'bg-indigo-600 scale-100' : 'bg-white/50 scale-90'}`}></div>
+                                                <div className={`w-4 h-4 rounded-full shadow-sm transition-all duration-300 ${isActive ? 'bg-indigo-600' : 'bg-white/50'}`}></div>
                                             </button>
                                         </div>
 
@@ -199,32 +177,10 @@ export default function MyCardsPage() {
                     );
                 })}
 
-                <div className="pt-8 text-center pb-20">
+                <div className="pt-8 text-center">
                     <p className="text-xs text-slate-400 font-medium">左右滑動卡片可進行刪除</p>
                 </div>
             </div>
-
-            {/* --- Slide-Up Detail View Container --- */}
-            {selectedCard && (
-                <div className={`fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 ease-out transform ${isDetailOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                    {/* We wrap CardDetailView to ensure it takes full height */}
-                    <div className="flex-1 overflow-y-auto">
-                        <CardDetailView
-                            card={selectedCard}
-                            onBack={handleCloseDetail}
-                            onEdit={() => setIsEditing(true)}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* Backdrop for detail view (optional, but good for focus) */}
-            {selectedCard && (
-                <div
-                    className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isDetailOpen ? 'opacity-100' : 'opacity-0'}`}
-                    onClick={handleCloseDetail}
-                />
-            )}
 
             <ConfirmModal
                 isOpen={!!cardToDelete}
