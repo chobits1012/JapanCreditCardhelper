@@ -180,18 +180,12 @@ export default function ProgressPage() {
                         尚未有紀錄
                     </div>
                 ) : (
-                    <div className="space-y-0 px-2">
+                    <div className="space-y-3 px-2">
                         {sortedTransactions.map((tx, index) => {
                             const card = cards.find(c => c.id === tx.cardId);
 
-                            // Receipt Style
-                            const receiptStyle = `
-                                bg-[#FFFBF5] p-3 flex justify-between items-center group
-                                border-stone-200 border-dashed
-                                ${index === 0 ? 'rounded-t-lg border-t border-x' : 'border-t-0 border-x'}
-                                ${index === sortedTransactions.length - 1 ? 'rounded-b-lg border-b' : ''}
-                                hover:bg-[#FFF9F0] transition-colors
-                            `;
+                            // Receipt Style (Standalone)
+                            const receiptStyle = "bg-[#FFFBF5] p-3 flex justify-between items-center group border border-stone-200 border-dashed rounded-xl shadow-sm hover:bg-[#FFF9F0] transition-colors relative";
 
                             return (
                                 <div key={tx.id} className={receiptStyle}>
@@ -204,11 +198,12 @@ export default function ProgressPage() {
                                                 {tx.merchantName || '未知名稱'}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between items-center mt-1 pr-4">
-                                            <div className="flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-2">
-                                                <span>{card?.bank}</span>
-                                                <span className="text-stone-300 mx-1">|</span>
-                                                <span>{card?.name}</span>
+                                        <div className="flex justify-start items-center mt-1">
+                                            {/* Fixed Width Container for Alignment */}
+                                            <div className="w-32 flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-1">
+                                                <span className="flex-shrink-0">{card?.bank}</span>
+                                                <span className="text-stone-300 mx-1 flex-shrink-0">|</span>
+                                                <span className="truncate">{card?.name}</span>
                                             </div>
                                             <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded flex-shrink-0">
                                                 {tx.currency} {tx.amount.toLocaleString()}
