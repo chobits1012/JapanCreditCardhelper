@@ -181,7 +181,7 @@ export default function ProgressPage() {
                     </div>
                 ) : (
                     <div className="space-y-3 px-2">
-                        {sortedTransactions.map((tx, index) => {
+                        {sortedTransactions.map(tx => {
                             const card = cards.find(c => c.id === tx.cardId);
 
                             // Receipt Style (Standalone)
