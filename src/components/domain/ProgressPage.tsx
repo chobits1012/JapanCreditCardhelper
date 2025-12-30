@@ -11,8 +11,6 @@ export default function ProgressPage() {
     // Sort transactions by date desc
     const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    const [historyStyle, setHistoryStyle] = useState<'glass' | 'receipt'>('glass');
-
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -161,24 +159,7 @@ export default function ProgressPage() {
             {/* Transaction History Section */}
             <div className="pt-4 border-t border-gray-100">
                 <header className="flex justify-between items-end mb-4">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
-                        {/* Style Toggles (Temporary) */}
-                        <div className="flex bg-gray-100 p-0.5 rounded-lg">
-                            <button
-                                onClick={() => setHistoryStyle('glass')}
-                                className={`px-2 py-0.5 text-[10px] font-medium rounded-md transition-all ${historyStyle === 'glass' ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'}`}
-                            >
-                                拿鐵玻璃
-                            </button>
-                            <button
-                                onClick={() => setHistoryStyle('receipt')}
-                                className={`px-2 py-0.5 text-[10px] font-medium rounded-md transition-all ${historyStyle === 'receipt' ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:text-gray-600'}`}
-                            >
-                                旅行票根
-                            </button>
-                        </div>
-                    </div>
+                    <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
                     {sortedTransactions.length > 0 && (
                         <button
                             onClick={() => openModal(
@@ -199,12 +180,11 @@ export default function ProgressPage() {
                         尚未有紀錄
                     </div>
                 ) : (
-                    <div className={`${historyStyle === 'receipt' ? 'space-y-0 px-2' : 'space-y-3'}`}>
+                    <div className="space-y-0 px-2">
                         {sortedTransactions.map((tx, index) => {
                             const card = cards.find(c => c.id === tx.cardId);
 
-                            // Style Variants
-                            const glassStyle = "glass-card p-3 rounded-xl flex justify-between items-center group bg-[#FDFBF9]/60 backdrop-blur-md border border-[#E6DDD5] shadow-sm hover:bg-white/80 transition-all";
+                            // Receipt Style
                             const receiptStyle = `
                                 bg-[#FFFBF5] p-3 flex justify-between items-center group
                                 border-stone-200 border-dashed
@@ -214,30 +194,29 @@ export default function ProgressPage() {
                             `;
 
                             return (
-                                <div key={tx.id} className={historyStyle === 'glass' ? glassStyle : receiptStyle}>
+                                <div key={tx.id} className={receiptStyle}>
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
-                                            <span className={`text-xs font-bold ${historyStyle === 'receipt' ? 'text-stone-500 font-mono tracking-tighter' : 'text-gray-400'}`}>
+                                            <span className="text-xs font-bold text-stone-500 font-mono tracking-tighter">
                                                 {format(new Date(tx.date), 'MM/dd')}
                                             </span>
-                                            <span className={`font-medium ${historyStyle === 'receipt' ? 'text-stone-800 font-serif' : 'text-gray-800'}`}>
+                                            <span className="font-medium text-stone-800 font-serif">
                                                 {tx.merchantName || '未知名稱'}
                                             </span>
                                         </div>
-                                        <div className="flex items-center space-x-2 mt-0.5">
-                                            {historyStyle === 'glass' ? (
-                                                <span className="text-xs px-1.5 py-0.5 bg-gray-100/50 border border-gray-100 text-gray-500 rounded">{card?.name || '未知卡片'}</span>
-                                            ) : (
-                                                <span className="text-[10px] text-stone-400 uppercase tracking-widest border-b border-stone-200">{card?.bank}</span>
-                                            )}
-                                            <span className={`text-xs ${historyStyle === 'receipt' ? 'font-mono text-stone-600' : 'text-gray-400'}`}>
-                                                {tx.currency} {historyStyle === 'receipt' ? tx.amount.toLocaleString() : tx.amount}
+                                        <div className="flex items-center flex-wrap gap-y-1 mt-1">
+                                            <div className="flex items-center space-x-1.5 mr-3">
+                                                <span className="text-[10px] text-stone-400 uppercase tracking-wider">{card?.bank}</span>
+                                                <span className="text-xs font-bold text-stone-700 border-b border-stone-200 pb-0.5">{card?.name || '未知卡片'}</span>
+                                            </div>
+                                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded">
+                                                {tx.currency} {tx.amount.toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-3">
                                         <div className="text-right">
-                                            <div className={`text-sm font-bold ${historyStyle === 'receipt' ? 'text-stone-800 font-mono' : 'text-primary-900'}`}>
+                                            <div className="text-sm font-bold text-stone-800 font-mono">
                                                 +{tx.calculatedRewardAmount}
                                             </div>
                                             <div className="text-[10px] text-gray-400">回饋</div>
