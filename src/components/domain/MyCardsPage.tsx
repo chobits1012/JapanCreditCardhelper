@@ -1,17 +1,37 @@
 import { useState } from 'react';
-import { CreditCard as CardIcon, Plus, Info, Trash2 } from 'lucide-react';
+import { Plus, Trash2, CreditCard as CardIcon, ChevronRight } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import CardDataForm from './CardDataForm';
 import CardDetailView from './CardDetailView';
 import ConfirmModal from '../ui/ConfirmModal';
 import type { CreditCard } from '../../types';
 
+// Helper to get card style based on bank/name
+const getCardStyle = (bank: string, name: string) => {
+    const text = (bank + name).toLowerCase();
+    if (text.includes('富邦') || text.includes('fubon')) return 'bg-gradient-to-br from-blue-600 to-cyan-500 shadow-blue-200';
+    if (text.includes('聯邦') || text.includes('吉鶴')) return 'bg-gradient-to-br from-rose-500 to-pink-500 shadow-rose-200';
+    if (text.includes('玉山') || text.includes('熊本')) return 'bg-gradient-to-br from-emerald-600 to-teal-500 shadow-emerald-200';
+    if (text.includes('國泰') || text.includes('cube')) return 'bg-gradient-to-br from-slate-700 to-slate-500 shadow-slate-200';
+    if (text.includes('街口') || text.includes('jko')) return 'bg-gradient-to-br from-red-600 to-red-500 shadow-red-200';
+    if (text.includes('全支付')) return 'bg-gradient-to-br from-indigo-600 to-purple-500 shadow-indigo-200';
+    return 'bg-gradient-to-br from-slate-800 to-zinc-700 shadow-gray-300';
+};
+
+// Helper: Card Logo / Icon
+const CardLogo = () => {
+    return (
+        <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+            <CardIcon className="w-4 h-4 text-white" />
+        </div>
+    );
+};
+
 export default function MyCardsPage() {
     const { cards, activeCardIds, toggleCard, removeCard } = useStore();
     const [isAdding, setIsAdding] = useState(false);
     const [selectedCard, setSelectedCard] = useState<CreditCard | null>(null);
     const [cardToDelete, setCardToDelete] = useState<CreditCard | null>(null);
-
     const [isEditing, setIsEditing] = useState(false);
 
     if (isAdding) {
@@ -23,7 +43,7 @@ export default function MyCardsPage() {
             initialCard={selectedCard}
             onBack={() => {
                 setIsEditing(false);
-                setSelectedCard(null); // Go back to list
+                setSelectedCard(null);
             }}
         />;
     }
@@ -37,87 +57,131 @@ export default function MyCardsPage() {
     }
 
     return (
-        <div className="max-w-md mx-auto p-4 space-y-6 pb-20">
-            <header className="flex items-center justify-between mb-2">
-                <h1 className="text-xl font-bold text-gray-800">卡片管理</h1>
+        <div className="max-w-md mx-auto p-4 pb-24 min-h-screen">
+            {/* Header Area */}
+            <div className="flex items-center justify-between mb-6 pt-2">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">我的錢包</h1>
+                    <p className="text-xs text-slate-500 font-medium mt-1">管理您的信用卡與權益</p>
+                </div>
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-full text-xs font-bold shadow-lg shadow-slate-200 active:scale-95 transition-all"
                 >
-                    <Plus className="w-4 h-4" />
-                    <span>新增卡片</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>新增</span>
                 </button>
-            </header>
-            <p className="text-sm text-gray-500">勾選您擁有的信用卡，試算時將只顯示這些卡片。</p>
+            </div>
 
-            <div className="space-y-4">
-                {cards.map(card => {
+            {/* Cards List */}
+            <div className="space-y-5">
+                {cards.map((card) => {
                     const isActive = activeCardIds.includes(card.id);
+                    const gradientClass = getCardStyle(card.bank, card.name);
+
+                    // Get highest rate for display tag
+                    const programs = card.programs || [];
+                    const currentProgram = programs[0]; // Simplification
+                    const jpRate = currentProgram ? Math.max(currentProgram.baseRateOverseas, ...currentProgram.bonusRules.filter(r => r.region === 'japan' || !r.region).map(r => r.rate)) : 0;
+                    const displayRate = (jpRate * 100).toFixed(1);
+
                     return (
-                        <div key={card.id} className="w-full overflow-hidden rounded-2xl relative group">
-                            <div className="flex w-full overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1">
-                                {/* Main Card Content - Snap Center */}
-                                <div className="min-w-full snap-center pl-1">
+                        <div key={card.id} className="group relative w-full h-48 rounded-3xl transition-all duration-300 hover:scale-[1.02]">
+                            {/* Swipe/Underlay Actions (Visible when card is swiped or handled via absolute positioning logic if implementing swipe lib, 
+                                but here we use a simple reveal or side button for simplicity in React without libraries) 
+                                Let's put a small delete button floating outside or sticking out?
+                                Actually, sticking to the user's previous "horizontal scroll" pattern is safe, but let's make it look better.
+                             */}
+                            <div className="w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar rounded-3xl flex items-center">
+                                {/* The Card Face */}
+                                <div className="min-w-full h-full snap-center pl-0.5 pr-0.5 py-1">
                                     <div
-                                        className={`relative p-4 rounded-2xl border transition-all flex items-center justify-between
-                                 ${isActive
-                                                ? 'border-blue-500 bg-blue-50/50 shadow-sm'
-                                                : 'border-gray-200 glass-card opacity-80 hover:opacity-100'
-                                            }`}
+                                        onClick={() => setSelectedCard(card)}
+                                        className={`w-full h-full rounded-2xl p-5 relative overflow-hidden transition-all duration-300 flex flex-col justify-between cursor-pointer shadow-lg
+                                            ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
+                                        `}
                                     >
-                                        {/* Click area for details */}
-                                        <div
-                                            className="flex-1 flex items-center space-x-4 cursor-pointer"
-                                            onClick={() => setSelectedCard(card)}
-                                        >
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
-                                                <CardIcon className="w-6 h-6" />
+                                        {/* Decorative Circles */}
+                                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                                        <div className="absolute top-20 -left-10 w-32 h-32 bg-black/5 rounded-full blur-xl"></div>
+
+                                        {/* Top Row */}
+                                        <div className="relative z-10 flex justify-between items-start">
+                                            <div className="flex items-center gap-3">
+                                                <CardLogo />
+                                                <div>
+                                                    <h3 className="text-white font-bold text-lg leading-tight tracking-wide shadow-black/10 drop-shadow-md">
+                                                        {card.name}
+                                                    </h3>
+                                                    <p className="text-white/80 text-[10px] font-medium tracking-wider uppercase">
+                                                        {card.bank}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className={`font-bold ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{card.name}</h3>
-                                                <p className="text-xs text-gray-400 flex items-center">
-                                                    {card.bank}
-                                                    <Info className="w-3 h-3 ml-1 opacity-50" />
-                                                </p>
-                                            </div>
+
+                                            {/* Status Toggle (Stop propagation) */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleCard(card.id);
+                                                }}
+                                                className={`w-10 h-6 rounded-full p-1 transition-all duration-300 flex items-center ${isActive ? 'bg-white/90 justify-end' : 'bg-black/20 justify-start'}`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full shadow-sm transition-all duration-300 ${isActive ? 'bg-indigo-600' : 'bg-white/50'}`}></div>
+                                            </button>
                                         </div>
 
-                                        {/* Toggle switch area */}
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleCard(card.id);
-                                            }}
-                                            className={`h-full pl-4 border-l border-gray-100 flex items-center cursor-pointer hover:opacity-70`}
-                                        >
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
-                       ${isActive ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}
-                    `}>
-                                                {isActive && (
-                                                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
+                                        {/* Middle/Bottom Info */}
+                                        <div className="relative z-10 mt-auto">
+                                            <div className="flex items-end justify-between">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-white/60 text-[10px] font-mono tracking-widest">**** **** ****</span>
+                                                        <span className="text-white/90 text-xs font-mono font-bold tracking-widest">8888</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md border border-white/10">
+                                                            <span className="text-[10px] font-bold text-white">🇯🇵 最高 {displayRate}%</span>
+                                                        </div>
+                                                        <div className="px-2 py-0.5 bg-black/10 backdrop-blur-md rounded-md border border-white/5">
+                                                            <span className="text-[10px] text-white/80">手續費 {card.foreignTxFee}%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm group-active:scale-95">
+                                                    <ChevronRight className="w-5 h-5 text-white" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Delete Button - Snap Center (Revealed on swipe) */}
-                                <div className="min-w-[80px] snap-center flex items-center justify-center pl-2">
+                                {/* Delete Action (Hidden Slide) */}
+                                <div className="min-w-[80px] h-[90%] snap-center flex items-center justify-center pl-3 pr-1">
                                     <button
                                         onClick={() => setCardToDelete(card)}
-                                        className="w-full h-full bg-red-50 text-red-500 rounded-2xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all border border-red-100"
+                                        className="w-full h-full bg-red-50 text-red-500 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-red-100 shadow-sm"
                                     >
-                                        <Trash2 className="w-5 h-5" />
-                                        <span className="text-[10px] font-bold">刪除</span>
+                                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            <Trash2 className="w-5 h-5 text-red-600" />
+                                        </div>
+                                        <span className="text-[10px] font-bold tracking-wide">刪除卡片</span>
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Animation Stagger Helper */}
+                            <div className="absolute inset-0 z-[-1] rounded-3xl shadow-xl opacity-0 group-hover:opacity-10 transition-opacity bg-current text-slate-800"></div>
                         </div>
                     );
                 })}
+
+                <div className="pt-8 text-center">
+                    <p className="text-xs text-slate-400 font-medium">左右滑動卡片可進行刪除</p>
+                </div>
             </div>
+
             <ConfirmModal
                 isOpen={!!cardToDelete}
                 title="確定要刪除嗎？"
