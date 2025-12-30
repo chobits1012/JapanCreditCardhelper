@@ -73,39 +73,83 @@ export default function ProgressPage() {
                         if (rulesWithCaps.length === 0) return null;
 
                         return (
-                            <div key={card.id} className="glass-card rounded-2xl overflow-hidden">
-                                <div className="bg-white/40 px-4 py-3 border-b border-white/20 flex justify-between items-center">
-                                    <h3 className="font-bold text-gray-800">{card.name}</h3>
-                                    <span className="text-xs text-gray-500">{card.bank}</span>
-                                </div>
-                                <div className="p-4 space-y-5">
-                                    {rulesWithCaps.map(rule => {
-                                        // Use current date to show "current status"
-                                        const nowStr = format(new Date(), 'yyyy-MM-dd');
-                                        const used = getRuleUsage(rule.id, nowStr, card.statementDate || 27);
-                                        const cap = rule.capAmount || 0;
-                                        const percent = Math.min(100, (used / cap) * 100);
-                                        const isNearLimit = percent >= 80;
-                                        const isFull = percent >= 100;
+                        return (
+                            <div key={card.id} className="relative group">
+                                {/* Decorative Gradient Border/Glow */}
+                                <div className="absolute -inset-0.5 bg-gradient-to-br from-indigo-300/30 via-purple-300/30 to-rose-300/30 rounded-[1.2rem] opacity-70 blur-sm group-hover:opacity-100 transition-all duration-500"></div>
 
-                                        return (
-                                            <div key={rule.id} className="space-y-2">
-                                                <div className="flex justify-between items-baseline text-sm">
-                                                    <span className="font-medium text-gray-700 font-sans tracking-wide">{rule.name}</span>
-                                                    <span className={`${isFull ? 'text-red-500 font-bold' : isNearLimit ? 'text-orange-500' : 'text-gray-500'} font-mono`}>
-                                                        ${used} <span className="text-gray-300 text-xs">/ ${cap}</span>
-                                                    </span>
-                                                </div>
-                                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={`h-full transition-all duration-500 ${isFull ? 'bg-red-500' : isNearLimit ? 'bg-orange-400' : 'bg-primary-500'}`}
-                                                        style={{ width: `${percent}%` }}
-                                                    />
-                                                </div>
-                                                {isFull && <p className="text-[10px] text-red-500">已達上限，建議更換卡片消費</p>}
+                                {/* Card Container */}
+                                <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white/60 overflow-hidden transition-transform duration-500 hover:scale-[1.01]">
+                                    {/* Card Header */}
+                                    <div className="relative px-5 py-4 flex justify-between items-center bg-gradient-to-r from-slate-50/80 to-transparent border-b border-indigo-50/50">
+                                        <div className="flex items-center gap-3">
+                                            {/* Bank Icon / Accent */}
+                                            <div className="w-1.5 h-8 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500 shadow-sm"></div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 text-lg tracking-tight">{card.name}</h3>
+                                                <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase bg-slate-100/80 px-2 py-0.5 rounded-full">{card.bank}</span>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                        {/* Optional: Card Image placeholder or Icon */}
+                                        <div className="w-10 h-6 bg-gradient-to-br from-slate-200 to-slate-300 rounded overflow-hidden opacity-30 group-hover:opacity-50 transition-opacity">
+                                            <div className="w-full h-full bg-white/30 backdrop-blur-sm transform rotate-45 translate-x-2"></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Rules Usage Section */}
+                                    <div className="p-5 space-y-6">
+                                        {rulesWithCaps.map(rule => {
+                                            const nowStr = format(new Date(), 'yyyy-MM-dd');
+                                            const used = getRuleUsage(rule.id, nowStr, card.statementDate || 27);
+                                            const cap = rule.capAmount || 0;
+                                            const safeUsed = typeof used === 'number' ? used : 0;
+                                            const safeCap = typeof cap === 'number' && cap > 0 ? cap : 1;
+                                            const rawPercent = (safeUsed / safeCap) * 100;
+                                            const percent = Math.min(100, Math.max(0, rawPercent));
+
+                                            const isNearLimit = percent >= 80;
+                                            const isFull = percent >= 100;
+
+                                            return (
+                                                <div key={rule.id} className="space-y-2.5">
+                                                    <div className="flex justify-between items-end">
+                                                        <span className="text-sm font-medium text-slate-700">{rule.name}</span>
+                                                        <div className="text-right">
+                                                            <span className={`text-xs font-bold font-mono ${isFull ? 'text-rose-500' : isNearLimit ? 'text-amber-500' : 'text-indigo-600'}`}>
+                                                                ${used.toLocaleString()}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-400 font-medium ml-1">/ ${cap.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Progress Bar Container */}
+                                                    <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden ring-1 ring-slate-100 shadow-inner relative">
+                                                        {/* Background Track Pattern (Optional) */}
+                                                        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-400 to-transparent" />
+
+                                                        <div
+                                                            className={`h-full rounded-full shadow-sm relative transition-all duration-500 ease-out
+                                                                ${isFull
+                                                                    ? 'bg-gradient-to-r from-red-500 to-rose-600'
+                                                                    : isNearLimit
+                                                                        ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                                                                        : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                                                                }
+                                                            `}
+                                                            style={{ width: `${percent}%` }}
+                                                        />
+                                                    </div>
+
+                                                    {isFull && (
+                                                        <div className="flex items-center gap-1.5 animate-pulse">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                            <p className="text-[10px] font-bold text-rose-500">已達上限，建議更換卡片</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         );
