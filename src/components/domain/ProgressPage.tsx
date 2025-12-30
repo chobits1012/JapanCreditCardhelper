@@ -180,80 +180,79 @@ export default function ProgressPage() {
                         尚未有紀錄
                     </div>
                 ) : (
-                ): (
-                        <div className = "space-y-0 px-2 pb-4">
+                    <div className="space-y-0 px-2 pb-4">
                         {sortedTransactions.map(tx => {
                             const card = cards.find(c => c.id === tx.cardId);
 
-                // Receipt Style (Standalone but connected)
-                const receiptStyle = "bg-[#FFFBF5] p-3 flex justify-between items-center group border border-stone-200 border-dashed rounded-xl shadow-sm hover:bg-[#FFF9F0] hover:z-10 hover:shadow-md hover:scale-[1.005] transition-all duration-300 relative";
+                            // Receipt Style (Standalone but connected)
+                            const receiptStyle = "bg-[#FFFBF5] p-3 flex justify-between items-center group border border-stone-200 border-dashed rounded-xl shadow-sm hover:bg-[#FFF9F0] hover:z-10 hover:shadow-md hover:scale-[1.005] transition-all duration-300 relative";
 
-                return (
-                <div key={tx.id} className={receiptStyle}>
-                    <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xs font-bold text-stone-500 font-mono tracking-tighter">
-                                {format(new Date(tx.date), 'MM/dd')}
-                            </span>
-                            <span className="font-medium text-stone-800 font-serif">
-                                {tx.merchantName || '未知名稱'}
-                            </span>
-                        </div>
-                        <div className="flex justify-start items-center mt-1">
-                            {/* Fixed Width Container for Alignment */}
-                            <div className="w-32 flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-1">
-                                <span className="flex-shrink-0">{card?.bank}</span>
-                                <span className="text-stone-300 mx-1 flex-shrink-0">|</span>
-                                <span className="truncate">{card?.name}</span>
-                            </div>
-                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded flex-shrink-0">
-                                {tx.currency} {tx.amount.toLocaleString()}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <div className="text-right">
-                            <div className="text-sm font-bold text-stone-800 font-mono">
-                                +{tx.calculatedRewardAmount}
-                            </div>
-                            <div className="text-[10px] text-gray-400">回饋</div>
-                        </div>
-                        <button
-                            onClick={() => openModal(
-                                '刪除紀錄',
-                                '確定要刪除這筆交易紀錄嗎？\n刪除後進度將會扣除，但無法復原。',
-                                () => removeTransaction(tx.id),
-                                true
-                            )}
-                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-60 group-hover:opacity-100"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-                );
+                            return (
+                                <div key={tx.id} className={receiptStyle}>
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-xs font-bold text-stone-500 font-mono tracking-tighter">
+                                                {format(new Date(tx.date), 'MM/dd')}
+                                            </span>
+                                            <span className="font-medium text-stone-800 font-serif">
+                                                {tx.merchantName || '未知名稱'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-start items-center mt-1">
+                                            {/* Fixed Width Container for Alignment */}
+                                            <div className="w-32 flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-1">
+                                                <span className="flex-shrink-0">{card?.bank}</span>
+                                                <span className="text-stone-300 mx-1 flex-shrink-0">|</span>
+                                                <span className="truncate">{card?.name}</span>
+                                            </div>
+                                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded flex-shrink-0">
+                                                {tx.currency} {tx.amount.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-3">
+                                        <div className="text-right">
+                                            <div className="text-sm font-bold text-stone-800 font-mono">
+                                                +{tx.calculatedRewardAmount}
+                                            </div>
+                                            <div className="text-[10px] text-gray-400">回饋</div>
+                                        </div>
+                                        <button
+                                            onClick={() => openModal(
+                                                '刪除紀錄',
+                                                '確定要刪除這筆交易紀錄嗎？\n刪除後進度將會扣除，但無法復原。',
+                                                () => removeTransaction(tx.id),
+                                                true
+                                            )}
+                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-60 group-hover:opacity-100"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
                         })}
-            </div>
+                    </div>
                 )}
-        </div>
+            </div>
 
-            {/* Reset Data Section */ }
-    <div className="pt-8 text-center pb-8 border-t border-gray-100 mt-8">
-        <button
-            onClick={() => openModal(
-                '重置應用程式',
-                '警告：這是用來修復嚴重錯誤的選項。\n確定要重置整個應用程式嗎？\n\n這將會：\n1. 刪除所有交易紀錄\n2. 刪除所有自訂卡片與設定\n3. 恢復到剛安裝時的狀態',
-                () => {
-                    localStorage.clear();
-                    window.location.reload();
-                },
-                true
-            )}
-            className="text-[10px] text-gray-300 hover:text-red-400 underline transition-colors"
-        >
-            重置應用程式 (Factory Reset)
-        </button>
-    </div>
+            {/* Reset Data Section */}
+            <div className="pt-8 text-center pb-8 border-t border-gray-100 mt-8">
+                <button
+                    onClick={() => openModal(
+                        '重置應用程式',
+                        '警告：這是用來修復嚴重錯誤的選項。\n確定要重置整個應用程式嗎？\n\n這將會：\n1. 刪除所有交易紀錄\n2. 刪除所有自訂卡片與設定\n3. 恢復到剛安裝時的狀態',
+                        () => {
+                            localStorage.clear();
+                            window.location.reload();
+                        },
+                        true
+                    )}
+                    className="text-[10px] text-gray-300 hover:text-red-400 underline transition-colors"
+                >
+                    重置應用程式 (Factory Reset)
+                </button>
+            </div>
         </div >
     );
 }
