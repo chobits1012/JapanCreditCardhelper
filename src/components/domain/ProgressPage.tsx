@@ -204,12 +204,13 @@ export default function ProgressPage() {
                                                 {tx.merchantName || '未知名稱'}
                                             </span>
                                         </div>
-                                        <div className="flex items-center flex-wrap gap-y-1 mt-1">
-                                            <div className="flex items-center space-x-1.5 mr-3">
-                                                <span className="text-[10px] text-stone-400 uppercase tracking-wider">{card?.bank}</span>
-                                                <span className="text-xs font-bold text-stone-700 border-b border-stone-200 pb-0.5">{card?.name || '未知卡片'}</span>
+                                        <div className="flex justify-between items-center mt-1 pr-4">
+                                            <div className="flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-2">
+                                                <span>{card?.bank}</span>
+                                                <span className="text-stone-300 mx-1">|</span>
+                                                <span>{card?.name}</span>
                                             </div>
-                                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded">
+                                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded flex-shrink-0">
                                                 {tx.currency} {tx.amount.toLocaleString()}
                                             </span>
                                         </div>
