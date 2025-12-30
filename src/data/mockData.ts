@@ -14,7 +14,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '2025 下半年權益',
                 startDate: '2025-07-01',
                 endDate: '2025-12-31',
-                baseRate: 0.01,
+                baseRateOverseas: 0.03, // 日本 3%
+                baseRateDomestic: 0.01, // 國內 1%
                 bonusRules: [
                     {
                         id: 'j-japan-general',
@@ -48,7 +49,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '2024 下半年權益',
                 startDate: '2024-07-01',
                 endDate: '2024-12-31',
-                baseRate: 0.01, // 國內 1%
+                baseRateOverseas: 0.01, // 國內 1%
+                baseRateDomestic: 0.01,
                 bonusRules: [
                     {
                         id: 'rule_jim_jp_3',
@@ -75,7 +77,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '2024 權益',
                 startDate: '2024-01-01',
                 endDate: '2024-12-31',
-                baseRate: 0.01,
+                baseRateOverseas: 0.01,
+                baseRateDomestic: 0.01,
                 bonusRules: [
                     {
                         id: 'rule_kuma_jp_2',
@@ -120,7 +123,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '全支付日本活動',
                 startDate: '2024-01-01',
                 endDate: '2025-12-31',
-                baseRate: 0,
+                baseRateOverseas: 0,
+                baseRateDomestic: 0,
                 bonusRules: [
                     {
                         id: 'rule_allplus_jp_25',
@@ -148,7 +152,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '街口日本活動',
                 startDate: '2024-01-01',
                 endDate: '2025-12-31',
-                baseRate: 0,
+                baseRateOverseas: 0,
+                baseRateDomestic: 0,
                 bonusRules: [
                     {
                         id: 'rule_jko_jp_generic',
@@ -176,7 +181,8 @@ export const MOCK_CARDS: CreditCard[] = [
                 name: '趣旅行權益',
                 startDate: '2025-01-01',
                 endDate: '2026-12-31',
-                baseRate: 0.03, // 3%
+                baseRateOverseas: 0.03, // 3%
+                baseRateDomestic: 0.01, // 1%
                 bonusRules: []
             }
         ]

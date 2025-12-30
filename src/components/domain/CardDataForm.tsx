@@ -19,7 +19,8 @@ interface BonusRuleState {
     capPeriod: 'monthly' | 'campaign';
     checkJapan: boolean;
     requiresRegistration: boolean;
-    specificMerchants: string; // New: comma separated
+    specificMerchants: string; // comma separated
+    region: 'global' | 'japan' | 'taiwan';
 }
 
 export default function CardDataForm({ onBack, initialCard }: CardDataFormProps) {
@@ -37,6 +38,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         capAmount: rule.capAmount ? rule.capAmount.toString() : '',
         capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
         checkJapan: rule.categories.includes('general_japan'),
+        region: rule.region || 'japan', // Default to japan for existing rules
+
         requiresRegistration: rule.requiresRegistration || false,
         specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : ''
     })) || [];
@@ -45,7 +48,11 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const [bank, setBank] = useState(initialCard?.bank || '');
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
-    const [baseRate, setBaseRate] = useState(activeProgram ? (activeProgram.baseRate * 100).toString() : '1');
+
+    // Split Base Rates
+    const [baseRateOverseas, setBaseRateOverseas] = useState(activeProgram ? (activeProgram.baseRateOverseas * 100).toString() : '1');
+    const [baseRateDomestic, setBaseRateDomestic] = useState(activeProgram ? (activeProgram.baseRateDomestic * 100).toString() : '1');
+
     const [programStartDate, setProgramStartDate] = useState(activeProgram?.startDate || format(new Date(), 'yyyy-MM-dd'));
     const [programEndDate, setProgramEndDate] = useState(activeProgram?.endDate || format(addYears(new Date(), 2), 'yyyy-MM-dd'));
     const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
@@ -77,7 +84,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
                 const prog = template.programs?.[0];
                 if (prog) {
-                    setBaseRate((prog.baseRate * 100).toString());
+                    setBaseRateOverseas((prog.baseRateOverseas * 100).toString());
+                    setBaseRateDomestic((prog.baseRateDomestic * 100).toString());
 
                     if (prog.bonusRules && prog.bonusRules.length > 0) {
                         const newRules: BonusRuleState[] = prog.bonusRules.map(rule => ({
@@ -88,7 +96,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
                             checkJapan: rule.categories.includes('general_japan'),
                             requiresRegistration: rule.requiresRegistration || false,
-                            specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : ''
+                            specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
+                            region: rule.region || 'japan'
                         }));
                         setBonusRules(newRules);
                     }
@@ -125,7 +134,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             requiresRegistration: ruleState.requiresRegistration,
             specificMerchants: ruleState.specificMerchants
                 ? ruleState.specificMerchants.split(/[,，]/).map(s => s.trim()).filter(Boolean)
-                : undefined
+                : undefined,
+            region: ruleState.region
         }));
 
         const updatedProgram = {
@@ -134,7 +144,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             name: activeProgram?.name || '預設權益',
             startDate: programStartDate,
             endDate: programEndDate,
-            baseRate: parseFloat(baseRate) / 100,
+            baseRateOverseas: parseFloat(baseRateOverseas) / 100,
+            baseRateDomestic: parseFloat(baseRateDomestic) / 100,
             bonusRules: domainBonusRules
         };
 
@@ -165,7 +176,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             capPeriod: 'monthly',
             checkJapan: false,
             requiresRegistration: false,
-            specificMerchants: ''
+            specificMerchants: '',
+            region: 'japan'
         }]);
     };
 
@@ -267,16 +279,29 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">基礎回饋率 (%)</label>
-                        <input
-                            required
-                            type="number"
-                            step="0.1"
-                            value={baseRate}
-                            onChange={e => setBaseRate(e.target.value)}
-                            className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">🇯🇵 海外回饋 (%)</label>
+                            <input
+                                required
+                                type="number"
+                                step="0.1"
+                                value={baseRateOverseas}
+                                onChange={e => setBaseRateOverseas(e.target.value)}
+                                className="w-full p-2 bg-indigo-50/50 border border-indigo-100 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">🇹🇼 國內回饋 (%)</label>
+                            <input
+                                required
+                                type="number"
+                                step="0.1"
+                                value={baseRateDomestic}
+                                onChange={e => setBaseRateDomestic(e.target.value)}
+                                className="w-full p-2 bg-orange-50/50 border border-orange-100 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">結帳日 (每月幾號)</label>
@@ -363,6 +388,33 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                         />
                                     </div>
+
+                                    {/* Region Selector */}
+                                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">活動適用地區</label>
+                                        <div className="flex gap-2">
+                                            {[
+                                                { id: 'japan', label: '🇯🇵 僅限日本', color: 'peer-checked:bg-indigo-600' },
+                                                { id: 'taiwan', label: '🇹🇼 僅限台灣', color: 'peer-checked:bg-orange-500' },
+                                                { id: 'global', label: '🌍 全球通用', color: 'peer-checked:bg-slate-600' }
+                                            ].map((opt) => (
+                                                <label key={opt.id} className="flex-1 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name={`region-${rule.id}`}
+                                                        value={opt.id}
+                                                        checked={rule.region === opt.id}
+                                                        onChange={(e) => updateRule(rule.id, 'region', e.target.value)}
+                                                        className="peer sr-only"
+                                                    />
+                                                    <div className={`text-center py-2 px-1 rounded-md text-xs font-medium text-gray-500 bg-white border border-gray-200 transition-all ${opt.color} peer-checked:text-white peer-checked:border-transparent peer-checked:shadow-sm`}>
+                                                        {opt.label}
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">加碼回饋率 (%)</label>

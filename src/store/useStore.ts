@@ -7,8 +7,10 @@ interface AppState {
     cards: CreditCard[];
     activeCardIds: string[]; // IDs of cards the user owns/enabled
     transactions: Transaction[];
+    mode: 'travel' | 'daily'; // Global App Mode
 
     // Actions
+    toggleMode: () => void;
     addTransaction: (t: Transaction) => void;
     addCard: (c: CreditCard) => void;
     updateCard: (c: CreditCard) => void;
@@ -27,6 +29,11 @@ export const useStore = create<AppState>()(
             cards: MOCK_CARDS,
             activeCardIds: MOCK_CARDS.map(c => c.id), // Default all active
             transactions: [],
+            mode: 'travel', // Default to Travel Mode (Japan)
+
+            toggleMode: () => set((state) => ({
+                mode: state.mode === 'travel' ? 'daily' : 'travel'
+            })),
 
             addTransaction: (t) => set((state) => ({
                 transactions: [...state.transactions, t]
@@ -122,29 +129,43 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'credit-card-helper-storage',
-            version: 1,
+            version: 2,
             migrate: (persistedState: any, version) => {
-                if (version === 0 || version === undefined) {
-                    // Migration from v0 to v1:
-                    // Ensure all "System Virtual Cards" (e.g. All Plus, JKO) are present.
-                    // We DO NOT overwrite user's existing cards, only append missing system ones.
+                if (version === 0 || version === undefined || version === 1) {
+                    // Migration to v2: Dual Base Rates & Region
+                    // Convert old `baseRate` to `baseRateOverseas` and `baseRateDomestic`
 
                     const existingCards = persistedState.cards || [];
-                    const virtualCardIds = ['card_virtual_allplus', 'card_virtual_jko'];
+                    const migratedCards = existingCards.map((card: any) => ({
+                        ...card,
+                        programs: card.programs.map((prog: any) => ({
+                            ...prog,
+                            // Map old baseRate to baseRateOverseas
+                            baseRateOverseas: prog.baseRateOverseas ?? prog.baseRate ?? 0.01,
+                            // Default domestic to overseas (safe fallback) or 1%
+                            baseRateDomestic: prog.baseRateDomestic ?? prog.baseRate ?? 0.01,
+                            // Migrate Rules: Default to 'japan' if not set, 
+                            // but actually 'global' might be safer? No, this was a "Japan Travel App", 
+                            // so existing rules are likely Japan-specific.
+                            bonusRules: prog.bonusRules.map((rule: any) => ({
+                                ...rule,
+                                region: rule.region || 'japan'
+                            }))
+                        }))
+                    }));
 
+                    // Also handle Missing Virtual Cards logic from v1 (copy-paste logic to be safe)
+                    const virtualCardIds = ['card_virtual_allplus', 'card_virtual_jko'];
                     const missingCards = MOCK_CARDS.filter(mock =>
                         virtualCardIds.includes(mock.id) &&
-                        !existingCards.some((existing: CreditCard) => existing.id === mock.id)
+                        !migratedCards.some((existing: CreditCard) => existing.id === mock.id)
                     );
 
-                    if (missingCards.length > 0) {
-                        return {
-                            ...persistedState,
-                            cards: [...existingCards, ...missingCards],
-                            // Optional: Add them to activeCardIds if you want them enabled by default
-                            // activeCardIds: [...(persistedState.activeCardIds || []), ...missingCards.map(c => c.id)] 
-                        };
-                    }
+                    return {
+                        ...persistedState,
+                        cards: [...migratedCards, ...missingCards],
+                        mode: persistedState.mode || 'travel'
+                    };
                 }
                 return persistedState;
             },

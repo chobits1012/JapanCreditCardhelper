@@ -12,7 +12,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
             name: '旅日與指定通路權益 (2026)',
             startDate: '2025-01-01',
             endDate: '2026-06-30',
-            baseRate: 0.025, // 日本消費 2.5%
+            baseRateOverseas: 0.03,
+            baseRateDomestic: 0.01,
             note: '日本消費 2.5% (含實體/網購)',
             bonusRules: [
                 {
@@ -48,7 +49,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
                 name: '日本消費權益 (2026)',
                 startDate: '2026-01-01',
                 endDate: '2026-06-30',
-                baseRate: 0.025, // 日本消費 2.5%
+                baseRateOverseas: 0.03,
+                baseRateDomestic: 0.01,
                 note: '日本消費 2.5% (無上限)',
                 bonusRules: [
                     {
@@ -104,7 +106,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
                 name: '日本消費權益 (2025)',
                 startDate: '2025-01-01',
                 endDate: '2025-12-31',
-                baseRate: 0.025, // 日本消費 2.5%
+                baseRateOverseas: 0.03,
+                baseRateDomestic: 0.01,
                 bonusRules: [
                     {
                         id: 'rule-jiho-quicpay',
@@ -141,7 +144,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
             name: '日韓旅遊權益 (2025)',
             startDate: '2025-01-01',
             endDate: '2025-12-31',
-            baseRate: 0.03, // 日韓 3%
+            baseRateOverseas: 0.03, // 日韓 3%
+            baseRateDomestic: 0.01,
             bonusRules: [
                 {
                     id: 'rule-fubon-j-local',
@@ -171,7 +175,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
             name: '趣旅行權益 (2025)',
             startDate: '2025-01-01',
             endDate: '2025-12-31',
-            baseRate: 0.03, // 3%
+            baseRateOverseas: 0.03, // 3%
+            baseRateDomestic: 0.01,
             bonusRules: [
             ]
         }]
@@ -193,7 +198,8 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
             // Or maybe there is H1? Usually these renew. 
             // Let's set start date 2025-01-01 but Note "活動每季登錄".
             endDate: '2025-12-31',
-            baseRate: 0.01, // 一般回饋 1%
+            baseRateOverseas: 0.01,
+            baseRateDomestic: 0.01,
             bonusRules: [
                 {
                     id: 'rule-sinopac-mitsui-foreign',

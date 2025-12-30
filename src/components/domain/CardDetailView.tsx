@@ -67,12 +67,18 @@ export default function CardDetailView({ card, onBack, onEdit }: CardDetailViewP
                         </div>
 
                         {/* Base Rate */}
-                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-medium text-gray-600">一般消費回饋</span>
-                                <span className="text-lg font-bold text-blue-600">{(program.baseRate * 100).toFixed(1)}%</span>
+                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm grid grid-cols-2 gap-4">
+                            <div>
+                                <span className="text-xs font-medium text-gray-500 mb-1 block">🇯🇵 海外回饋</span>
+                                <span className="text-xl font-bold text-indigo-600">{(program.baseRateOverseas * 100).toFixed(1)}%</span>
                             </div>
-                            <p className="text-xs text-gray-400">適用於無特殊加碼之所有通路</p>
+                            <div>
+                                <span className="text-xs font-medium text-gray-500 mb-1 block">🇹🇼 國內回饋</span>
+                                <span className="text-xl font-bold text-orange-500">{(program.baseRateDomestic * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="col-span-2 text-[10px] text-gray-300 pt-2 border-t border-gray-50">
+                                適用於無特殊加碼之一般通路
+                            </div>
                         </div>
 
                         {/* Bonus Rules */}
@@ -88,7 +94,12 @@ export default function CardDetailView({ card, onBack, onEdit }: CardDetailViewP
                                         <div className="relative">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <h5 className="font-bold text-gray-800">{rule.name}</h5>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h5 className="font-bold text-gray-800">{rule.name}</h5>
+                                                        {rule.region === 'japan' && <span className="text-[10px] px-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded">🇯🇵 日本</span>}
+                                                        {rule.region === 'taiwan' && <span className="text-[10px] px-1 bg-orange-50 text-orange-600 border border-orange-100 rounded">🇹🇼 台灣</span>}
+                                                        {rule.region === 'global' && <span className="text-[10px] px-1 bg-slate-50 text-slate-600 border border-slate-100 rounded">🌍 全球</span>}
+                                                    </div>
                                                     <div className="flex flex-wrap gap-1 mt-1">
                                                         {rule.categories.map(cat => (
                                                             <span key={cat} className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">

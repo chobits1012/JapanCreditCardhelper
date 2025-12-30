@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import ConfirmModal from '../ui/ConfirmModal';
 
 export default function ProgressPage() {
-    const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction } = useStore();
+    const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction, mode } = useStore();
     const activeCards = cards.filter(c => activeCardIds.includes(c.id));
 
     // Sort transactions by date desc
@@ -64,7 +64,11 @@ export default function ProgressPage() {
                     {activeCards.map(card => {
                         // Find all rules with caps
                         const rulesWithCaps = card.programs.flatMap(p => p.bonusRules)
-                            .filter(r => r.capAmount !== undefined);
+                            .filter(r => r.capAmount !== undefined)
+                            .filter(r => {
+                                const allowedRegions = mode === 'travel' ? ['global', 'japan'] : ['global', 'taiwan'];
+                                return allowedRegions.includes(r.region || 'japan');
+                            });
 
                         if (rulesWithCaps.length === 0) return null;
 

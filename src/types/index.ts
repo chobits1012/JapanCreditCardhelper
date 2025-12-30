@@ -19,6 +19,7 @@ export interface BonusRule {
     id: string;
     name: string; // 例如: "日韓實體消費加碼"
     rate: number; // 回饋率 (例如 0.03 代表 3%)
+    region?: 'global' | 'japan' | 'taiwan'; // 適用地區 (New)
 
     // 適用條件
     categories: MerchantCategory[]; // 適用通路
@@ -44,7 +45,8 @@ export interface RewardProgram {
     startDate: string; // ISO Date
     endDate: string;   // ISO Date
 
-    baseRate: number;  // 基礎回饋
+    baseRateOverseas: number;  // 海外/日本回饋 (Renamed from baseRate)
+    baseRateDomestic: number;  // 國內/台灣回饋 (New)
     bonusRules: BonusRule[]; // 加碼規則列表
 
     note?: string; // 備註 (例如: "需登錄", "需綁定帳戶")

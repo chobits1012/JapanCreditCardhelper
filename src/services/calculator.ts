@@ -38,7 +38,8 @@ export function getActiveProgram(card: CreditCard, date: string): RewardProgram 
 export function calculateReward(
     card: CreditCard,
     transaction: Transaction,
-    usageMap: Record<string, number> = {}
+    usageMap: Record<string, number> = {},
+    mode: 'travel' | 'daily' = 'travel' // Default to travel to be safe
 ): CalculationResult {
     const result: CalculationResult = {
         cardId: card.id,
@@ -91,19 +92,33 @@ export function calculateReward(
     const amountTWD = Math.floor(transaction.amount * exchangeRate);
 
     // 1. Base Reward
-    // Usually base reward has no cap or very high cap, we assume no cap for MVP base logic unless specified
-    const baseReward = Math.floor(amountTWD * program.baseRate);
+    // Select base rate based on mode
+    const applicableBaseRate = mode === 'travel'
+        ? (program.baseRateOverseas ?? 0) // Fallback 0 is unlikely due to migration
+        : (program.baseRateDomestic ?? 0);
+
+    const baseReward = Math.floor(amountTWD * applicableBaseRate);
     result.breakdown.push({
         ruleId: 'base',
-        ruleName: 'Base Reward',
+        ruleName: mode === 'travel' ? '海外基礎回饋' : '國內基礎回饋',
         amount: baseReward,
-        rate: program.baseRate,
+        rate: applicableBaseRate,
         capped: false
     });
     result.totalReward += baseReward;
 
     // 2. Bonus Rules
     for (const rule of program.bonusRules) {
+        // Filter by Region Strategy
+        // If mode is 'travel' -> Allow 'global' OR 'japan'
+        // If mode is 'daily'  -> Allow 'global' OR 'taiwan'
+        const ruleRegion = rule.region || 'japan'; // Default to japan for legacy data
+        const allowedRegions = mode === 'travel' ? ['global', 'japan'] : ['global', 'taiwan'];
+
+        if (!allowedRegions.includes(ruleRegion)) {
+            continue;
+        }
+
         const isCategoryMatch = rule.categories.includes(transaction.category);
         const isMerchantMatch = rule.specificMerchants
             ? rule.specificMerchants.some(m => transaction.merchantName.includes(m))
@@ -164,8 +179,19 @@ export function calculateReward(
     result.totalRate = amountTWD > 0 ? result.totalReward / amountTWD : 0;
 
     // Calculate Transaction Fee (1.5% for foreign currency)
-    // Fee is calculated on the TWD amount on the statement.
-    if (transaction.currency !== 'TWD') {
+    // Mode Logic:
+    // Travel Mode: ALWAYS charge fee (conservative assumption for travel)
+    // Daily Mode: Charge fee ONLY if currency is not TWD
+
+    let shouldChargeFee = false;
+
+    if (mode === 'travel') {
+        shouldChargeFee = true;
+    } else {
+        shouldChargeFee = transaction.currency !== 'TWD';
+    }
+
+    if (shouldChargeFee) {
         const feeRate = (card.foreignTxFee ?? 1.5) / 100; // default 1.5%
         result.transactionFee = Math.floor(amountTWD * feeRate);
     } else {

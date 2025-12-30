@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calculator, DollarSign, Store, Calendar, Wallet, Trophy } from 'lucide-react';
+import { Calculator, DollarSign, Store, Calendar, Wallet, Trophy, Plane, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { calculateReward, type CalculationResult } from '../../services/calculator';
 import type { MerchantCategory } from '../../types';
 
 export default function QuickCalculator() {
-    const { cards, activeCardIds, addTransaction } = useStore();
+    const { cards, activeCardIds, addTransaction, mode, toggleMode } = useStore();
 
     // Form State
     const [amount, setAmount] = useState<number | ''>(10000);
@@ -130,7 +130,7 @@ export default function QuickCalculator() {
                 });
             }
 
-            return calculateReward(card, baseTx, usageMap);
+            return calculateReward(card, baseTx, usageMap, mode);
         });
 
         // 3. Sort by total reward (desc)
@@ -166,9 +166,37 @@ export default function QuickCalculator() {
 
     return (
         <div className="max-w-md mx-auto p-4 space-y-6 pb-20">
-            <header className="flex items-center space-x-2 mb-6 animate-fade-in-up">
-                <Calculator className="w-6 h-6 text-indigo-700" />
-                <h1 className="text-xl font-bold text-slate-800">回饋試算</h1>
+            <header className="flex items-center justify-between mb-6 animate-fade-in-up">
+                <div className="flex items-center space-x-2">
+                    <Calculator className="w-6 h-6 text-indigo-700" />
+                    <h1 className="text-xl font-bold text-slate-800">回饋試算</h1>
+                </div>
+
+                {/* Mode Toggle Switch */}
+                <button
+                    onClick={toggleMode}
+                    className={`
+                        relative flex items-center h-9 rounded-full p-1 transition-all duration-300 shadow-inner
+                        ${mode === 'travel' ? 'bg-indigo-100 w-32' : 'bg-orange-100 w-32'}
+                    `}
+                >
+                    <div className={`
+                        absolute w-1/2 h-7 rounded-full shadow-sm flex items-center justify-center transition-all duration-300 font-bold text-xs gap-1 z-10
+                        ${mode === 'travel'
+                            ? 'translate-x-[calc(100%-4px)] left-0 bg-indigo-600 text-white'
+                            : 'translate-x-0 left-1 bg-orange-500 text-white'
+                        }
+                    `}>
+                        {mode === 'travel' ? <Plane className="w-3 h-3" /> : <Home className="w-3 h-3" />}
+                        {mode === 'travel' ? '旅日模式' : '日常模式'}
+                    </div>
+
+                    {/* Background Labels */}
+                    <div className="w-full h-full flex justify-between items-center text-[10px] font-bold px-3">
+                        <span className={`transition-opacity duration-300 ${mode === 'daily' ? 'opacity-0' : 'text-indigo-400 opacity-70'}`}>日常</span>
+                        <span className={`transition-opacity duration-300 ${mode === 'travel' ? 'opacity-0' : 'text-orange-400 opacity-70'}`}>旅日</span>
+                    </div>
+                </button>
             </header>
 
             {/* Input Form */}
