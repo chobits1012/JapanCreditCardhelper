@@ -391,7 +391,9 @@ export default function QuickCalculator() {
                                                 return (
                                                     <div key={i} className="flex justify-between items-center text-[11px]">
                                                         <div className="flex items-center gap-2 overflow-hidden">
-                                                            <span className="text-slate-600 truncate max-w-[120px]">{rule.ruleName}</span>
+                                                            <span className="text-slate-600 truncate max-w-[150px]">
+                                                                {rule.ruleName} <span className="text-gray-400 font-medium ml-0.5">[{Number((rule.rate * 100).toFixed(1))}%]</span>
+                                                            </span>
                                                             {cap > 0 && (
                                                                 <span className={`text-[9px] px-1.5 py-0 rounded ${isNearCap ? 'bg-red-100 text-red-600 font-bold' : 'bg-slate-100 text-slate-400'}`}>
                                                                     剩 ${remaining.toLocaleString()}
