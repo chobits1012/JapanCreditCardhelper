@@ -180,7 +180,7 @@ export default function ProgressPage() {
                         尚未有紀錄
                     </div>
                 ) : (
-                    <div className="space-y-3 px-2">
+                    <div className="space-y-0.5 px-2">
                         {sortedTransactions.map(tx => {
                             const card = cards.find(c => c.id === tx.cardId);
 
