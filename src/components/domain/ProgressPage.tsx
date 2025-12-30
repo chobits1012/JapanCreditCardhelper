@@ -8,8 +8,13 @@ export default function ProgressPage() {
     const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction, resetTransactions, mode } = useStore();
     const activeCards = cards.filter(c => activeCardIds.includes(c.id));
 
+    // Filter transactions based on mode (Travel = JPY only, Daily = TWD only)
+    const filteredTransactions = transactions.filter(tx => {
+        return mode === 'travel' ? tx.currency === 'JPY' : tx.currency === 'TWD';
+    });
+
     // Sort transactions by date desc
-    const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
