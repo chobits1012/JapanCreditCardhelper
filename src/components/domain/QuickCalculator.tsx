@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calculator, DollarSign, Store, Calendar, Wallet, Trophy, Plane, Home } from 'lucide-react';
+import { Calculator, DollarSign, Store, Trophy, Plane, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { calculateReward, type CalculationResult } from '../../services/calculator';
 import type { MerchantCategory } from '../../types';
