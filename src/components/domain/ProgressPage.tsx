@@ -77,8 +77,8 @@ export default function ProgressPage() {
                                 {/* Decorative Gradient Border/Glow */}
                                 <div className="absolute -inset-0.5 bg-gradient-to-br from-indigo-300/30 via-purple-300/30 to-rose-300/30 rounded-[1.2rem] opacity-70 blur-sm group-hover:opacity-100 transition-all duration-500"></div>
 
-                                {/* Card Container - Morandi Warm Oat Theme */}
-                                <div className="relative bg-[#F7F5F2]/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-stone-200/40 border border-[#E6E2DE] overflow-hidden transition-transform duration-500 hover:scale-[1.01]">
+                                {/* Card Container - Morandi Milk Tea Theme */}
+                                <div className="relative bg-[#F5EBE0]/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-stone-200/40 border border-[#E6DDD5] overflow-hidden transition-transform duration-500 hover:scale-[1.01]">
                                     {/* Card Header */}
                                     <div className="relative px-5 py-4 flex justify-between items-center bg-gradient-to-r from-slate-50/80 to-transparent border-b border-indigo-50/50">
                                         <div className="flex items-center gap-3">
