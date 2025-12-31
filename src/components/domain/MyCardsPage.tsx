@@ -233,8 +233,14 @@ export default function MyCardsPage() {
 
                     const programs = card.programs || [];
                     const currentProgram = programs[0];
-                    const jpRate = currentProgram ? Math.max(currentProgram.baseRateOverseas, ...currentProgram.bonusRules.filter(r => r.region === 'japan' || !r.region).map(r => r.rate)) : 0;
-                    const displayRate = (jpRate * 100).toFixed(1);
+                    // Calculate max potential rate: Base Rate + Max individual bonus rate (assuming bonuses are additive "extra" rates)
+                    // If bonuses are total rates, this logic might need adjustment, but "stacking" usually implies adding.
+                    // However, to be safe and cover "Total Rate" scenarios entered by user, let's assume specific rules might be higher than base.
+                    // User Request "疊加起來最高的" -> likely means Base + Max Bonus.
+                    const baseRate = currentProgram ? currentProgram.baseRateOverseas : 0;
+                    const maxBonus = currentProgram ? Math.max(0, ...currentProgram.bonusRules.filter(r => r.region === 'japan' || !r.region).map(r => r.rate)) : 0;
+                    const totalMaxRate = baseRate + maxBonus;
+                    const displayRate = (totalMaxRate * 100).toFixed(1);
 
                     // --- GRID VIEW ---
                     if (viewMode === 'grid') {
