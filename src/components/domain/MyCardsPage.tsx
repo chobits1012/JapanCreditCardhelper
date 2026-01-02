@@ -194,7 +194,9 @@ export default function MyCardsPage() {
         />;
     }
 
-    const stackTransition: any = { type: "spring", stiffness: 260, damping: 20 };
+    // Much slower, "cinematic" spring for maximum visibility
+    // Stiffness 120 (softer), Mass 1.2 (heavier), Damping 15 (less resistance)
+    const stackTransition: any = { type: "spring", stiffness: 120, damping: 15, mass: 1.2 };
 
     return (
         <LayoutGroup>
