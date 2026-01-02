@@ -338,6 +338,11 @@ export default function MyCardsPage() {
                                     } else {
                                         // Render NON-FOCUSED cards collapsed at bottom
                                         // Use relative `stackIndex` instead of absolute `index`
+                                        // INVERT offset: Higher index (Front) should be LOWER (smaller bottom value)
+                                        // This ensures we see the HEADERS (Top Edge) peaking out, not footers.
+                                        const distinctStackSize = nonFocusedCards.length;
+                                        const reverseIndex = distinctStackSize - 1 - stackIndex;
+
                                         return (
                                             <motion.div
                                                 layoutId={`card-${card.id}`}
@@ -347,9 +352,11 @@ export default function MyCardsPage() {
                                              ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
                                          `}
                                                 style={{
-                                                    zIndex: stackIndex, // Correct visual stacking order
-                                                    bottom: (stackIndex * 4) + 'px', // No gaps!
-                                                    scale: 0.9 + (stackIndex * 0.01), // Slight scale effect
+                                                    zIndex: stackIndex, // Keep Z-index natural (Front covers Back)
+                                                    bottom: (reverseIndex * 4) + 'px', // Invert offset for Header visibility
+                                                    scale: 0.9 + (stackIndex * 0.01), // Scale: Front is bigger? Or Back is bigger?
+                                                    // Usually Front (Lower) is bigger. Back (Higher) is smaller.
+                                                    // If stackIndex 0 is Back. It should be smallest.
                                                 }}
                                                 transition={stackTransition}
                                             >
