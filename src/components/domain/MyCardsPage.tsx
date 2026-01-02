@@ -456,6 +456,7 @@ export default function MyCardsPage() {
                                         card={selectedCard}
                                         onBack={handleCloseDetail} // Back button is redundant in draggable sheet but good to keep
                                         onEdit={() => setIsEditing(true)}
+                                        gradientClass={getCardStyle(selectedCard.bank, selectedCard.name)}
                                     />
 
                                     {/* Delete Button Area */}

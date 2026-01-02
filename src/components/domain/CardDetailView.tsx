@@ -5,9 +5,10 @@ interface CardDetailViewProps {
     card: CreditCard;
     onBack: () => void;
     onEdit: () => void;
+    gradientClass?: string;
 }
 
-export default function CardDetailView({ card, onBack, onEdit }: CardDetailViewProps) {
+export default function CardDetailView({ card, onBack, onEdit, gradientClass }: CardDetailViewProps) {
     // Determine active program (simplified: take the first one or logic to find current)
     // Active logic could be improved: take the first one or logic to find current)
     // For MVP, likely the first one or we filter by date. 
@@ -33,7 +34,7 @@ export default function CardDetailView({ card, onBack, onEdit }: CardDetailViewP
             </header>
 
             {/* Card Visual / Header */}
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white shadow-lg shadow-gray-300">
+            <div className={`rounded-2xl p-6 text-white shadow-lg shadow-gray-300 ${gradientClass || 'bg-gradient-to-br from-gray-800 to-gray-900'}`}>
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <p className="text-gray-400 text-xs font-medium tracking-wider mb-1">{card.bank}</p>
