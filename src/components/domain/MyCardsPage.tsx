@@ -8,15 +8,20 @@ import type { CreditCard } from '../../types';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 // Helper to get card style based on bank/name
-const getCardStyle = (bank: string, name: string) => {
-    const text = (bank + name).toLowerCase();
-    if (text.includes('富邦') || text.includes('fubon')) return 'bg-gradient-to-br from-blue-600 to-cyan-500 shadow-blue-200';
-    if (text.includes('聯邦') || text.includes('吉鶴')) return 'bg-gradient-to-br from-rose-500 to-pink-500 shadow-rose-200';
-    if (text.includes('玉山') || text.includes('熊本')) return 'bg-gradient-to-br from-emerald-600 to-teal-500 shadow-emerald-200';
-    if (text.includes('國泰') || text.includes('cube')) return 'bg-gradient-to-br from-slate-700 to-slate-500 shadow-slate-200';
-    if (text.includes('街口') || text.includes('jko')) return 'bg-gradient-to-br from-red-600 to-red-500 shadow-red-200';
-    if (text.includes('全支付')) return 'bg-gradient-to-br from-indigo-600 to-purple-500 shadow-indigo-200';
-    return 'bg-gradient-to-br from-slate-800 to-zinc-700 shadow-gray-300';
+import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
+
+// Helper to get card style based on theme or bank/name
+const getCardStyle = (card: CreditCard) => {
+    // 1. Use manual theme if set
+    if (card.colorTheme) {
+        const theme = CARD_THEMES.find(t => t.id === card.colorTheme);
+        if (theme) return theme.class;
+    }
+
+    // 2. Fallback to keyword matching
+    const themeId = getThemeByKeyword(card.bank, card.name);
+    const theme = CARD_THEMES.find(t => t.id === themeId);
+    return theme ? theme.class : CARD_THEMES.find(t => t.id === 'matte_black')!.class;
 };
 
 // Helper: Card Logo / Icon
@@ -255,7 +260,7 @@ export default function MyCardsPage() {
                     <AnimatePresence mode="popLayout">
                         {cards.map((card, index) => {
                             const isActive = activeCardIds.includes(card.id);
-                            const gradientClass = getCardStyle(card.bank, card.name);
+                            const gradientClass = getCardStyle(card);
 
                             const programs = card.programs || [];
                             const currentProgram = programs[0];
@@ -463,7 +468,7 @@ export default function MyCardsPage() {
                                         card={selectedCard}
                                         onBack={handleCloseDetail} // Back button is redundant in draggable sheet but good to keep
                                         onEdit={() => setIsEditing(true)}
-                                        gradientClass={getCardStyle(selectedCard.bank, selectedCard.name)}
+                                        gradientClass={getCardStyle(selectedCard)}
                                     />
 
                                     {/* Delete Button Area */}

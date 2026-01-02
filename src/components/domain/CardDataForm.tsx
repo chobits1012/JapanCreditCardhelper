@@ -4,6 +4,7 @@ import type { CreditCard, MerchantCategory } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Trash2, Smartphone, CreditCard as CreditCardIcon } from 'lucide-react';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
+import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
 import ConfirmModal from '../ui/ConfirmModal';
 
 interface CardDataFormProps {
@@ -58,6 +59,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     const [name, setName] = useState(initialCard?.name || '');
     const [bank, setBank] = useState(initialCard?.bank || '');
+    // Initialize theme: from card data OR predict from name/bank if editing
+    const [colorTheme, setColorTheme] = useState<string>(
+        initialCard?.colorTheme || (initialCard ? getThemeByKeyword(initialCard.bank, initialCard.name) : 'matte_black')
+    );
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
 
@@ -93,6 +98,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 // Apply template
                 if (template.name) setName(template.name);
                 if (template.bank) setBank(template.bank);
+                // Auto-select theme based on keyword
+                setColorTheme(getThemeByKeyword(template.bank || '', template.name || ''));
 
                 const prog = template.programs?.[0];
                 if (prog) {
@@ -170,6 +177,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             statementDate: parseInt(statementDate) || 27,
             foreignTxFee: parseFloat(foreignTxFee) || 1.5,
             supportedPaymentMethods, // Ensure card level still has these
+            colorTheme, // Save selected theme
             programs: [updatedProgram]
         };
 
@@ -278,6 +286,43 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                 />
                                 <span className="text-sm text-gray-700 font-medium">{method}</span>
                             </label>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Theme Selector */}
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">卡片色系風格</label>
+                    <div className="grid grid-cols-4 gap-3">
+                        {CARD_THEMES.map(theme => (
+                            <button
+                                key={theme.id}
+                                type="button"
+                                onClick={() => setColorTheme(theme.id)}
+                                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all active:scale-95
+                                    ${colorTheme === theme.id
+                                        ? 'bg-gray-50 border-gray-300 ring-1 ring-gray-300 shadow-inner'
+                                        : 'border-transparent hover:bg-gray-50'
+                                    }
+                                `}
+                            >
+                                <div
+                                    className="w-10 h-10 rounded-full shadow-sm border border-black/5 relative overflow-hidden transition-transform group-hover:scale-110"
+                                    style={{ background: theme.previewColor }}
+                                >
+                                    {/* Glass reflection effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/30" />
+                                </div>
+                                <span className={`text-[10px] font-medium text-center leading-tight
+                                    ${colorTheme === theme.id ? 'text-gray-800' : 'text-gray-400'}
+                                `}>
+                                    {theme.name}
+                                </span>
+
+                                {colorTheme === theme.id && (
+                                    <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-md ring-1 ring-black/5" />
+                                )}
+                            </button>
                         ))}
                     </div>
                 </div>

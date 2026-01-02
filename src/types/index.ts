@@ -60,6 +60,7 @@ export interface CreditCard {
     statementDate?: number; // 結帳日 (1-31)
     foreignTxFee?: number; // 海外交易手續費 (%) default 1.5
     imageUrl?: string;  // 卡面圖片
+    colorTheme?: string; // 卡片色系主題 ID (e.g., 'midnight_navy')
     supportedPaymentMethods?: string[]; // 支援的特殊支付方式 (e.g. ['PayPay (玉山Wallet)'])
     programs: RewardProgram[]; // 這張卡的各期權益
 }
