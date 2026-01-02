@@ -197,8 +197,9 @@ export default function MyCardsPage() {
     }
 
     // Much slower, "cinematic" spring for maximum visibility
-    // Stiffness 120 (softer), Mass 1.2 (heavier), Damping 15 (less resistance)
-    const stackTransition: any = { type: "spring", stiffness: 120, damping: 15, mass: 1.2 };
+    // Unified Elegant Transition for all view modes
+    // Slower, smoother spring physics to match the premium feel
+    const elegantTransition: any = { type: "spring", stiffness: 120, damping: 20, mass: 1 };
 
     return (
         <LayoutGroup>
@@ -206,6 +207,7 @@ export default function MyCardsPage() {
                 {/* Header Area */}
                 <motion.div
                     layout
+                    transition={elegantTransition}
                     className="flex items-center justify-between mb-6 pt-2 shrink-0 z-50 relative"
                 >
                     <div>
@@ -251,6 +253,7 @@ export default function MyCardsPage() {
                 {/* Content Area Based on View Mode */}
                 <motion.div
                     layout
+                    transition={elegantTransition}
                     className={`flex-1 relative
                     ${viewMode === 'grid' ? 'grid grid-cols-2 gap-3 pb-20 content-start' : ''}
                     ${viewMode === 'list' ? 'space-y-5 pb-20' : ''}
@@ -336,7 +339,7 @@ export default function MyCardsPage() {
                                                 onClick={() => handleStackClick(card)}
                                                 onToggle={() => toggleCard(card.id)}
                                                 onDeleteRequest={() => setCardToDelete(card)}
-                                                transition={stackTransition}
+                                                transition={elegantTransition}
                                                 className="shadow-2xl z-40 mb-auto" // mb-auto pushes it to top
                                             />
                                         );
@@ -363,7 +366,7 @@ export default function MyCardsPage() {
                                                     // Usually Front (Lower) is bigger. Back (Higher) is smaller.
                                                     // If stackIndex 0 is Back. It should be smallest.
                                                 }}
-                                                transition={stackTransition}
+                                                transition={elegantTransition}
                                             >
                                                 {/* Minimal Content */}
                                                 <div className="w-full h-1 bg-white/20 mx-auto mt-2 rounded-full w-1/4" />
@@ -384,7 +387,7 @@ export default function MyCardsPage() {
                                 `}
                                         style={{ zIndex: index }}
                                         whileHover={{ y: -10 }}
-                                        transition={stackTransition}
+                                        transition={elegantTransition}
                                     >
                                         <div className="p-5 h-full relative overflow-hidden rounded-3xl pointer-events-none">
                                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
@@ -418,77 +421,79 @@ export default function MyCardsPage() {
                                 />
                             );
                         })}
-                    </AnimatePresence>
+                    </AnimatePresence >
 
                     {viewMode === 'list' && (
                         <div className="pt-8 text-center pb-20">
                             <p className="text-xs text-slate-400 font-medium">左右滑動卡片可進行刪除</p>
                         </div>
                     )}
-                </motion.div>
+                </motion.div >
 
 
 
                 {/* --- Draggable Slide-Up Detail View --- */}
                 <AnimatePresence>
-                    {selectedCard && (
-                        <>
-                            {/* Backdrop */}
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-black/50 z-40"
-                                onClick={handleCloseDetail}
-                            />
+                    {
+                        selectedCard && (
+                            <>
+                                {/* Backdrop */}
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="fixed inset-0 bg-black/50 z-40"
+                                    onClick={handleCloseDetail}
+                                />
 
-                            {/* Sheet */}
-                            <motion.div
-                                className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
-                                initial={{ y: "100%" }}
-                                animate={{ y: 0 }}
-                                exit={{ y: "100%" }}
-                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                drag="y"
-                                dragConstraints={{ top: 0 }}
-                                dragElastic={0.2}
-                                onDragEnd={(_, info) => {
-                                    if (info.offset.y > 100 || info.velocity.y > 500) {
-                                        handleCloseDetail();
-                                    }
-                                }}
-                            >
-                                {/* Drag Handle */}
-                                <div className="w-full flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing bg-white">
-                                    <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto bg-white overscroll-contain">
-                                    <CardDetailView
-                                        card={selectedCard}
-                                        onBack={handleCloseDetail} // Back button is redundant in draggable sheet but good to keep
-                                        onEdit={() => setIsEditing(true)}
-                                        gradientClass={getCardStyle(selectedCard)}
-                                    />
-
-                                    {/* Delete Button Area */}
-                                    <div className="p-6 pb-24 border-t border-gray-100 bg-gray-50/50">
-                                        <button
-                                            onClick={() => setCardToDelete(selectedCard)}
-                                            className="w-full py-3 bg-white border border-red-200 text-red-500 rounded-xl font-bold shadow-sm active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                            刪除此卡片
-                                        </button>
-                                        <p className="text-center text-xs text-gray-400 mt-3">
-                                            刪除後將無法復原卡片資料與規則
-                                        </p>
+                                {/* Sheet */}
+                                <motion.div
+                                    className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    exit={{ y: "100%" }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    drag="y"
+                                    dragConstraints={{ top: 0 }}
+                                    dragElastic={0.2}
+                                    onDragEnd={(_, info) => {
+                                        if (info.offset.y > 100 || info.velocity.y > 500) {
+                                            handleCloseDetail();
+                                        }
+                                    }}
+                                >
+                                    {/* Drag Handle */}
+                                    <div className="w-full flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing bg-white">
+                                        <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        </>
-                    )}
-                </AnimatePresence>
+
+                                    <div className="flex-1 overflow-y-auto bg-white overscroll-contain">
+                                        <CardDetailView
+                                            card={selectedCard}
+                                            onBack={handleCloseDetail} // Back button is redundant in draggable sheet but good to keep
+                                            onEdit={() => setIsEditing(true)}
+                                            gradientClass={getCardStyle(selectedCard)}
+                                        />
+
+                                        {/* Delete Button Area */}
+                                        <div className="p-6 pb-24 border-t border-gray-100 bg-gray-50/50">
+                                            <button
+                                                onClick={() => setCardToDelete(selectedCard)}
+                                                className="w-full py-3 bg-white border border-red-200 text-red-500 rounded-xl font-bold shadow-sm active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                刪除此卡片
+                                            </button>
+                                            <p className="text-center text-xs text-gray-400 mt-3">
+                                                刪除後將無法復原卡片資料與規則
+                                            </p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )
+                    }
+                </AnimatePresence >
 
                 <ConfirmModal
                     isOpen={!!cardToDelete}
@@ -511,7 +516,7 @@ export default function MyCardsPage() {
                     }}
                     onCancel={() => setCardToDelete(null)}
                 />
-            </div>
-        </LayoutGroup>
+            </div >
+        </LayoutGroup >
     );
 }
