@@ -38,9 +38,10 @@ interface CreditCardListItemProps {
     onToggle: () => void;
     onDeleteRequest: () => void;
     layoutId?: string;
+    transition?: any;
 }
 
-const CreditCardListItem = ({ card, isActive, displayRate, gradientClass, onClick, onToggle, onDeleteRequest, layoutId }: CreditCardListItemProps) => {
+const CreditCardListItem = ({ card, isActive, displayRate, gradientClass, onClick, onToggle, onDeleteRequest, layoutId, transition }: CreditCardListItemProps) => {
     return (
         <motion.div
             layoutId={layoutId}
@@ -48,7 +49,7 @@ const CreditCardListItem = ({ card, isActive, displayRate, gradientClass, onClic
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
+            transition={transition || { duration: 0.3 }}
         >
             <div className="flex w-full overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1 h-full items-center">
                 {/* Main Card Content - Snap Center */}
@@ -183,6 +184,9 @@ export default function MyCardsPage() {
 
     // Prepare focused card data if any
     const focusedCard = cards.find(c => c.id === focusedCardId);
+
+    // Slower, floatier spring for visible "fly out" effect
+    const stackTransition: any = { type: "spring", stiffness: 260, damping: 20 };
 
     return (
         <LayoutGroup>
@@ -319,7 +323,7 @@ export default function MyCardsPage() {
                                 `}
                                     style={{ zIndex: index }}
                                     whileHover={{ y: -10 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    transition={stackTransition}
                                 >
                                     <div className="p-5 h-full relative overflow-hidden rounded-3xl pointer-events-none">
                                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
@@ -385,6 +389,7 @@ export default function MyCardsPage() {
                                     onClick={() => handleOpenDetail(focusedCard)}
                                     onToggle={() => toggleCard(focusedCard.id)}
                                     onDeleteRequest={() => setCardToDelete(focusedCard)}
+                                    transition={stackTransition}
                                 />
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
