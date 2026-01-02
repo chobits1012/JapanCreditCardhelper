@@ -167,9 +167,6 @@ export default function MyCardsPage() {
     };
 
     const handleStackClick = (card: CreditCard) => {
-        // If already focused, open detail. But for Apple Wallet vibe,
-        // tapping the focused card usually does nothing or opens details.
-        // Tapping collapsed stack collapses.
         if (focusedCardId === card.id) {
             handleOpenDetail(card);
         } else {
@@ -256,19 +253,6 @@ export default function MyCardsPage() {
                 `}
                 >
                     <AnimatePresence mode="popLayout">
-                        {/* 
-                   We need to map cards differently based on stack focus mode.
-                   But to keep Layout Animation working, we must render the SAME card components with SAME layoutIds.
-                   
-                   Strategy:
-                   Always map over `cards`. 
-                   If stack mode:
-                      if `!focusedCardId`: Render as Fan.
-                      if `focusedCardId`: 
-                         if card is focused: Render at Top.
-                         if card is NOT focused: Render at Bottom (collapsed).
-                */}
-
                         {cards.map((card, index) => {
                             const isActive = activeCardIds.includes(card.id);
                             const gradientClass = getCardStyle(card.bank, card.name);
@@ -324,6 +308,11 @@ export default function MyCardsPage() {
 
                             // --- STACK VIEW ---
                             if (viewMode === 'stack') {
+                                // Logic to calculate relative rank for gap-less stacking
+                                // Rank = Position among [NON-FOCUSED] cards
+                                // We filter out the focused card, find index of current card
+                                const nonFocusedCards = cards.filter(c => c.id !== focusedCardId);
+                                const stackIndex = nonFocusedCards.findIndex(c => c.id === card.id);
                                 const isFocused = focusedCardId === card.id;
                                 const hasFocus = !!focusedCardId;
 
@@ -348,7 +337,7 @@ export default function MyCardsPage() {
                                         );
                                     } else {
                                         // Render NON-FOCUSED cards collapsed at bottom
-                                        // We stack them very tightly at the bottom
+                                        // Use relative `stackIndex` instead of absolute `index`
                                         return (
                                             <motion.div
                                                 layoutId={`card-${card.id}`}
@@ -358,9 +347,9 @@ export default function MyCardsPage() {
                                              ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
                                          `}
                                                 style={{
-                                                    zIndex: index, // Maintain original layer order
-                                                    bottom: (index * 4) + 'px', // Stack slightly offset
-                                                    scale: 0.9 + (index * 0.01), // Slight scale effect
+                                                    zIndex: stackIndex, // Correct visual stacking order
+                                                    bottom: (stackIndex * 4) + 'px', // No gaps!
+                                                    scale: 0.9 + (stackIndex * 0.01), // Slight scale effect
                                                 }}
                                                 transition={stackTransition}
                                             >
