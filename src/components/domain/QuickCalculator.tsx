@@ -224,6 +224,18 @@ export default function QuickCalculator() {
                             >TWD</button>
                         </div>
                     </div>
+
+                    {/* TWD Conversion Display (Only for JPY) */}
+                    {currency === 'JPY' && amount && Number(amount) > 0 && exchangeRate && (
+                        <div className="flex items-center gap-1.5 ml-1 mt-1.5 text-[11px] text-gray-400 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <span>≈</span>
+                            <span className="font-medium text-gray-500">TWD ${Math.floor(Number(amount) * Number(exchangeRate)).toLocaleString()}</span>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-[10px]">
+                                {rateSource === 'live' ? '即時匯率' : '預設匯率'} {Number(exchangeRate).toFixed(4)}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Exchange Rate Input (Only for JPY) */}
