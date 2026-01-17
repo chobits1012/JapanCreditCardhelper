@@ -137,9 +137,10 @@ export function calculateReward(
             ? true
             : rule.paymentMethods.includes(transaction.paymentMethod);
 
-        // Check Min Amount
+        // CHECK 4: Minimum Amount Match (in TWD)
+        // minAmount is stored in TWD, so we need to compare with TWD amount
         const isAmountMatch = rule.minAmount
-            ? transaction.amount >= rule.minAmount
+            ? amountTWD >= rule.minAmount
             : true;
 
         if (isCategoryMatch && isMerchantMatch && isPaymentMatch && isAmountMatch) {

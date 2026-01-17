@@ -388,6 +388,11 @@ export default function QuickCalculator() {
                                                 const remaining = Math.max(0, cap - usage);
                                                 const isNearCap = cap > 0 && remaining < (Number(amount) * 0.1); // arbitrary warning threshold
 
+                                                // Get minAmount from the actual rule definition
+                                                const program = card.programs[0];
+                                                const ruleDefinition = program?.bonusRules.find(r => r.id === rule.ruleId);
+                                                const minAmount = ruleDefinition?.minAmount;
+
                                                 return (
                                                     <div key={i} className="flex justify-between items-center text-[11px]">
                                                         <div className="flex items-center gap-2 overflow-hidden">
@@ -397,6 +402,11 @@ export default function QuickCalculator() {
                                                             {cap > 0 && (
                                                                 <span className={`text-[9px] px-1.5 py-0 rounded ${isNearCap ? 'bg-red-100 text-red-600 font-bold' : 'bg-slate-100 text-slate-400'}`}>
                                                                     剩 ${remaining.toLocaleString()}
+                                                                </span>
+                                                            )}
+                                                            {minAmount && (
+                                                                <span className="text-[9px] px-1.5 py-0 rounded bg-blue-50 text-blue-600 border border-blue-100">
+                                                                    ≥${minAmount.toLocaleString()}
                                                                 </span>
                                                             )}
                                                         </div>

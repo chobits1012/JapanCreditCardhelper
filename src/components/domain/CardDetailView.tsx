@@ -114,17 +114,27 @@ export default function CardDetailView({ card, onBack, onEdit, gradientClass }: 
                                                 </div>
                                             </div>
 
-                                            <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between text-xs text-gray-500 items-center">
-                                                <div className="flex items-center space-x-2">
-                                                    <span>回饋上限</span>
-                                                    <span className="font-medium text-gray-700">
-                                                        {rule.capAmount ? `$${rule.capAmount}` : '無上限'}
-                                                    </span>
+                                            <div className="mt-3 pt-3 border-t border-gray-50 space-y-2">
+                                                <div className="flex justify-between text-xs text-gray-500 items-center">
+                                                    <div className="flex items-center space-x-2">
+                                                        <span>回饋上限</span>
+                                                        <span className="font-medium text-gray-700">
+                                                            {rule.capAmount ? `$${rule.capAmount}` : '無上限'}
+                                                        </span>
+                                                    </div>
+                                                    {rule.requiresRegistration && (
+                                                        <span className="text-[10px] items-center flex bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium">
+                                                            需登錄
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {rule.requiresRegistration && (
-                                                    <span className="text-[10px] items-center flex bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium">
-                                                        需登錄
-                                                    </span>
+                                                {rule.minAmount && (
+                                                    <div className="flex items-center gap-1.5 text-xs">
+                                                        <span className="text-gray-500">單筆門檻</span>
+                                                        <span className="font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                                            ≥ ${rule.minAmount.toLocaleString()} TWD
+                                                        </span>
+                                                    </div>
                                                 )}
                                             </div>
 

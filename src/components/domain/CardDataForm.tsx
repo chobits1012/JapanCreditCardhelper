@@ -23,6 +23,7 @@ interface BonusRuleState {
     specificMerchants: string; // comma separated
     region: 'global' | 'japan' | 'taiwan';
     paymentMethods: string[]; // Selected payment methods
+    minAmount: string; // Minimum transaction amount in TWD
 }
 
 const PAYMENT_OPTIONS = [
@@ -54,7 +55,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
         requiresRegistration: rule.requiresRegistration || false,
         specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
-        paymentMethods: rule.paymentMethods || []
+        paymentMethods: rule.paymentMethods || [],
+        minAmount: rule.minAmount ? rule.minAmount.toString() : ''
     })) || [];
 
     const [name, setName] = useState(initialCard?.name || '');
@@ -117,7 +119,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             requiresRegistration: rule.requiresRegistration || false,
                             specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
                             region: rule.region || 'japan',
-                            paymentMethods: rule.paymentMethods || []
+                            paymentMethods: rule.paymentMethods || [],
+                            minAmount: rule.minAmount ? rule.minAmount.toString() : ''
                         }));
                         setBonusRules(newRules);
                     }
@@ -156,7 +159,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 ? ruleState.specificMerchants.split(/[,，]/).map(s => s.trim()).filter(Boolean)
                 : undefined,
             region: ruleState.region,
-            paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined
+            paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined,
+            minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined
         }));
 
         const updatedProgram = {
@@ -200,7 +204,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             requiresRegistration: false,
             specificMerchants: '',
             region: 'japan',
-            paymentMethods: []
+            paymentMethods: [],
+            minAmount: ''
         }]);
     };
 
@@ -519,6 +524,24 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                 </select>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Minimum Transaction Amount */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">單筆消費門檻 (選填)</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                placeholder="無門檻"
+                                                value={rule.minAmount}
+                                                onChange={e => updateRule(rule.id, 'minAmount', e.target.value)}
+                                                className="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            />
+                                            <span className="text-xs font-medium text-gray-500 px-2 py-2 bg-gray-100 rounded-lg border border-gray-200">TWD</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+                                            💡 單筆消費需達此台幣金額才享有此回饋（日幣消費會自動換算）
+                                        </p>
                                     </div>
 
                                     {/* --- Payment Method Selector (NEW) --- */}
