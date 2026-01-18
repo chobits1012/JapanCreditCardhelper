@@ -28,6 +28,7 @@ interface BonusRuleState {
     minAmountCurrency: 'TWD' | 'JPY';
     startDate: string; // Individual rule start date (ISO)
     endDate: string;   // Individual rule end date (ISO)
+    createdAt: number; // Timestamp for display ordering (UI only)
 }
 
 const PAYMENT_OPTIONS = [
@@ -48,7 +49,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const activeProgram = initialCard?.programs[0];
 
     // Initialize Bonus Rules
-    const initialRules: BonusRuleState[] = activeProgram?.bonusRules.map(rule => ({
+    const initialRules: BonusRuleState[] = activeProgram?.bonusRules.map((rule, index) => ({
         id: rule.id,
         name: rule.name,
         rate: (rule.rate * 100).toString(),
@@ -64,7 +65,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         minAmount: rule.minAmount ? rule.minAmount.toString() : '',
         minAmountCurrency: rule.minAmountCurrency || 'TWD',
         startDate: rule.startDate || '', // Individual rule start date
-        endDate: rule.endDate || ''      // Individual rule end date
+        endDate: rule.endDate || '',      // Individual rule end date
+        createdAt: index // Use index as timestamp for existing rules
     })) || [];
 
     const [name, setName] = useState(initialCard?.name || '');
@@ -117,7 +119,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     setBaseRateDomestic((prog.baseRateDomestic * 100).toString());
 
                     if (prog.bonusRules && prog.bonusRules.length > 0) {
-                        const newRules: BonusRuleState[] = prog.bonusRules.map(rule => ({
+                        const newRules: BonusRuleState[] = prog.bonusRules.map((rule, index) => ({
                             id: crypto.randomUUID(),
                             name: rule.name,
                             rate: (rule.rate * 100).toString(),
@@ -132,7 +134,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             minAmount: rule.minAmount ? rule.minAmount.toString() : '',
                             minAmountCurrency: rule.minAmountCurrency || 'TWD',
                             startDate: rule.startDate || '',
-                            endDate: rule.endDate || ''
+                            endDate: rule.endDate || '',
+                            createdAt: index
                         }));
                         setBonusRules(newRules);
                     }
@@ -157,7 +160,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         const programId = activeProgram?.id || crypto.randomUUID();
 
         // Convert BonusRuleState back to Domain BonusRule
-        const domainBonusRules = bonusRules.map(ruleState => ({
+        // Sort by createdAt before saving to maintain chronological order
+        const sortedBonusRules = [...bonusRules].sort((a, b) => a.createdAt - b.createdAt);
+
+        const domainBonusRules = sortedBonusRules.map(ruleState => ({
             id: ruleState.id,
             name: ruleState.name,
             rate: parseFloat(ruleState.rate) / 100,
@@ -210,7 +216,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     };
 
     const addRule = () => {
-        setBonusRules([...bonusRules, {
+        // Add new rule at the beginning (top) with current timestamp
+        setBonusRules([{
             id: crypto.randomUUID(),
             name: '新加碼活動',
             rate: '3',
@@ -225,8 +232,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             minAmount: '',
             minAmountCurrency: 'TWD',
             startDate: '',
-            endDate: ''
-        }]);
+            endDate: '',
+            createdAt: Date.now() // Current timestamp ensures it sorts last when saving
+        }, ...bonusRules]);
     };
 
     const removeRule = (id: string) => {
