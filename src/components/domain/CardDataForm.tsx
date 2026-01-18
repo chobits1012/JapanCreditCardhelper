@@ -521,7 +521,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+
+                                    {/* Rate and Cap Amount - Optimized Layout */}
+                                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4">
+                                        {/* Rate Input - Narrower */}
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">加碼回饋率 (%)</label>
                                             <input
@@ -532,6 +535,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
                                         </div>
+
+                                        {/* Cap Amount with Currency and Period - More Spacious */}
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">回饋上限 (選填)</label>
                                             <div className="flex gap-2">
@@ -540,12 +545,12 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                     placeholder="無上限"
                                                     value={rule.capAmount}
                                                     onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
-                                                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                                    className="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                                 />
                                                 <select
                                                     value={rule.capAmountCurrency}
                                                     onChange={e => updateRule(rule.id, 'capAmountCurrency', e.target.value)}
-                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-20 flex-shrink-0"
+                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-16 flex-shrink-0"
                                                 >
                                                     <option value="TWD">TWD</option>
                                                     <option value="JPY">JPY</option>
@@ -553,7 +558,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                 <select
                                                     value={rule.capPeriod}
                                                     onChange={e => updateRule(rule.id, 'capPeriod', e.target.value)}
-                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-20 flex-shrink-0"
+                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-16 flex-shrink-0"
                                                 >
                                                     <option value="monthly">/月</option>
                                                     <option value="campaign">/總</option>
@@ -561,6 +566,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                             </div>
                                         </div>
                                     </div>
+
 
                                     {/* Minimum Transaction Amount */}
                                     <div>
