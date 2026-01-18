@@ -9,6 +9,7 @@ interface AppState {
     activeCardIds: string[]; // IDs of cards the user owns/enabled
     transactions: Transaction[];
     mode: 'travel' | 'daily'; // Global App Mode
+    hasCompletedOnboarding: boolean; // Whether user has completed onboarding
 
     // Actions
     toggleMode: () => void;
@@ -19,6 +20,7 @@ interface AppState {
     toggleCard: (cardId: string) => void;
     removeTransaction: (transactionId: string) => void;
     resetTransactions: () => void;
+    completeOnboarding: () => void;
 
     // Computed helpers
     getRuleUsage: (ruleId: string, date: string, statementDate?: number) => number;
@@ -31,6 +33,7 @@ export const useStore = create<AppState>()(
             activeCardIds: MOCK_CARDS.map(c => c.id), // Default all active
             transactions: [],
             mode: 'travel', // Default to Travel Mode (Japan)
+            hasCompletedOnboarding: false, // Default: show onboarding to new users
 
             toggleMode: () => set((state) => ({
                 mode: state.mode === 'travel' ? 'daily' : 'travel'
@@ -68,6 +71,8 @@ export const useStore = create<AppState>()(
             })),
 
             resetTransactions: () => set({ transactions: [] }),
+
+            completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
             getRuleUsage: (ruleId: string, targetDateStr: string, statementDate: number = 31) => {
                 const { transactions, cards } = get();
@@ -130,7 +135,7 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'credit-card-helper-storage',
-            version: 3,
+            version: 4,
             migrate: (persistedState: any, version) => {
                 let state = persistedState;
 
@@ -188,6 +193,14 @@ export const useStore = create<AppState>()(
                             cards: updatedCards
                         };
                     }
+                }
+
+                // Migration to v4: Add onboarding state
+                if (version === undefined || version < 4) {
+                    state = {
+                        ...state,
+                        hasCompletedOnboarding: state.hasCompletedOnboarding ?? false
+                    };
                 }
 
                 return state;
