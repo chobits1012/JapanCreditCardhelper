@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard, MerchantCategory } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Trash2, Smartphone, CreditCard as CreditCardIcon } from 'lucide-react';
@@ -94,6 +94,32 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     // Delete Confirmation State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Reinitialize bonusRules when initialCard changes (fixes bug where new rules disappear)
+    useEffect(() => {
+        if (activeProgram) {
+            const updatedRules: BonusRuleState[] = activeProgram.bonusRules.map((rule, index) => ({
+                id: rule.id,
+                name: rule.name,
+                rate: (rule.rate * 100).toString(),
+                capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+                capAmountCurrency: rule.capAmountCurrency || 'TWD',
+                capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
+                checkJapan: rule.categories.includes('general_japan'),
+                region: rule.region || 'japan',
+                requiresRegistration: rule.requiresRegistration || false,
+                specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
+                paymentMethods: rule.paymentMethods || [],
+                minAmount: rule.minAmount ? rule.minAmount.toString() : '',
+                minAmountCurrency: rule.minAmountCurrency || 'TWD',
+                startDate: rule.startDate || '',
+                endDate: rule.endDate || '',
+                createdAt: index
+            }));
+            setBonusRules(updatedRules);
+        }
+    }, [initialCard?.id, activeProgram?.bonusRules.length]); // Re-run when card changes or rules count changes
+
 
     const handleAutoFill = async () => {
         if (!bank && !name) {
