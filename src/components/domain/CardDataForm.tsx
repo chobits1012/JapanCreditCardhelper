@@ -522,48 +522,56 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                     </div>
 
 
-                                    {/* Rate and Cap Amount - Optimized Layout */}
-                                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4">
-                                        {/* Rate Input - Narrower */}
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">加碼回饋率 (%)</label>
+                                    {/* Rate and Cap Amount - Compact Fixed-Width Layout */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {/* Rate Input - Compact, 3 digits */}
+                                        <div className="flex-shrink-0">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">回饋率 (%)</label>
                                             <input
                                                 type="number"
                                                 step="0.1"
                                                 value={rule.rate}
                                                 onChange={e => updateRule(rule.id, 'rate', e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                                className="w-20 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
                                         </div>
 
-                                        {/* Cap Amount with Currency and Period - More Spacious */}
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">回饋上限 (選填)</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="number"
-                                                    placeholder="無上限"
-                                                    value={rule.capAmount}
-                                                    onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
-                                                    className="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                                />
-                                                <select
-                                                    value={rule.capAmountCurrency}
-                                                    onChange={e => updateRule(rule.id, 'capAmountCurrency', e.target.value)}
-                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-16 flex-shrink-0"
-                                                >
-                                                    <option value="TWD">TWD</option>
-                                                    <option value="JPY">JPY</option>
-                                                </select>
-                                                <select
-                                                    value={rule.capPeriod}
-                                                    onChange={e => updateRule(rule.id, 'capPeriod', e.target.value)}
-                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-16 flex-shrink-0"
-                                                >
-                                                    <option value="monthly">/月</option>
-                                                    <option value="campaign">/總</option>
-                                                </select>
-                                            </div>
+                                        {/* Cap Amount - 6 digits */}
+                                        <div className="flex-shrink-0">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">上限</label>
+                                            <input
+                                                type="number"
+                                                placeholder="無上限"
+                                                value={rule.capAmount}
+                                                onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
+                                                className="w-28 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            />
+                                        </div>
+
+                                        {/* Currency Selector */}
+                                        <div className="flex-shrink-0">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">幣別</label>
+                                            <select
+                                                value={rule.capAmountCurrency}
+                                                onChange={e => updateRule(rule.id, 'capAmountCurrency', e.target.value)}
+                                                className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            >
+                                                <option value="TWD">TWD</option>
+                                                <option value="JPY">JPY</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Period Selector */}
+                                        <div className="flex-shrink-0">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">週期</label>
+                                            <select
+                                                value={rule.capPeriod}
+                                                onChange={e => updateRule(rule.id, 'capPeriod', e.target.value)}
+                                                className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                            >
+                                                <option value="monthly">/月</option>
+                                                <option value="campaign">/總</option>
+                                            </select>
                                         </div>
                                     </div>
 
