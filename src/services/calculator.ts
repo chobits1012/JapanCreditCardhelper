@@ -151,21 +151,39 @@ export function calculateReward(
             ? true
             : rule.paymentMethods.includes(transaction.paymentMethod);
 
-        // CHECK 4: Minimum Amount Match (in TWD)
-        // minAmount is stored in TWD, so we need to compare with TWD amount
-        const isAmountMatch = rule.minAmount
-            ? amountTWD >= rule.minAmount
-            : true;
+        // CHECK 4: Minimum Amount Match (Currency-Aware)
+        // Compare transaction amount with rule's minimum threshold
+        // - If minAmountCurrency is 'JPY': Convert TWD back to JPY for comparison
+        // - If minAmountCurrency is 'TWD' or undefined: Direct TWD comparison (default)
+        let isAmountMatch = true;
+        if (rule.minAmount) {
+            if (rule.minAmountCurrency === 'JPY') {
+                // Convert transaction amount back to JPY for comparison
+                const amountJPY = Math.floor(transaction.amount);
+                isAmountMatch = amountJPY >= rule.minAmount;
+            } else {
+                // Default: TWD comparison
+                isAmountMatch = amountTWD >= rule.minAmount;
+            }
+        }
 
         if (isCategoryMatch && isMerchantMatch && isPaymentMatch && isAmountMatch) {
             // Calculate potential bonus
             let bonusAmount = Math.floor(amountTWD * rule.rate);
             let isCapped = false;
 
-            // Check Cap
+            // Check Cap (Currency-Aware)
+            // Reward caps are enforced in TWD (point value)
+            // - If capAmountCurrency is 'JPY': Convert JPY to TWD first
+            // - If capAmountCurrency is 'TWD' or undefined: Use directly (default)
             if (rule.capAmount !== undefined) {
+                // Convert cap to TWD if necessary
+                const capAmountTWD = rule.capAmountCurrency === 'JPY'
+                    ? Math.floor(rule.capAmount * exchangeRate)
+                    : rule.capAmount;
+
                 const used = usageMap[rule.id] || 0;
-                const remaining = Math.max(0, rule.capAmount - used);
+                const remaining = Math.max(0, capAmountTWD - used);
 
                 if (bonusAmount > remaining) {
                     bonusAmount = remaining;
@@ -174,14 +192,22 @@ export function calculateReward(
                 }
             }
 
+
             if (bonusAmount > 0 || isCapped) {
+                // Calculate displayed cap limit (in TWD for consistency)
+                const displayCapLimit = rule.capAmount !== undefined
+                    ? (rule.capAmountCurrency === 'JPY'
+                        ? Math.floor(rule.capAmount * exchangeRate)
+                        : rule.capAmount)
+                    : undefined;
+
                 result.breakdown.push({
                     ruleId: rule.id,
                     ruleName: rule.name,
                     amount: bonusAmount,
                     rate: rule.rate,
                     capped: isCapped,
-                    capLimit: rule.capAmount
+                    capLimit: displayCapLimit
                 });
                 result.totalReward += bonusAmount;
             }

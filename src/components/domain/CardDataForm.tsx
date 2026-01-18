@@ -17,13 +17,15 @@ interface BonusRuleState {
     name: string;
     rate: string;
     capAmount: string;
+    capAmountCurrency: 'TWD' | 'JPY';
     capPeriod: 'monthly' | 'campaign';
     checkJapan: boolean;
     requiresRegistration: boolean;
     specificMerchants: string; // comma separated
     region: 'global' | 'japan' | 'taiwan';
     paymentMethods: string[]; // Selected payment methods
-    minAmount: string; // Minimum transaction amount in TWD
+    minAmount: string;
+    minAmountCurrency: 'TWD' | 'JPY';
     startDate: string; // Individual rule start date (ISO)
     endDate: string;   // Individual rule end date (ISO)
 }
@@ -51,6 +53,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         name: rule.name,
         rate: (rule.rate * 100).toString(),
         capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+        capAmountCurrency: rule.capAmountCurrency || 'TWD',
         capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
         checkJapan: rule.categories.includes('general_japan'),
         region: rule.region || 'japan', // Default to japan for existing rules
@@ -59,6 +62,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
         paymentMethods: rule.paymentMethods || [],
         minAmount: rule.minAmount ? rule.minAmount.toString() : '',
+        minAmountCurrency: rule.minAmountCurrency || 'TWD',
         startDate: rule.startDate || '', // Individual rule start date
         endDate: rule.endDate || ''      // Individual rule end date
     })) || [];
@@ -118,6 +122,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             name: rule.name,
                             rate: (rule.rate * 100).toString(),
                             capAmount: rule.capAmount ? rule.capAmount.toString() : '',
+                            capAmountCurrency: rule.capAmountCurrency || 'TWD',
                             capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
                             checkJapan: rule.categories.includes('general_japan'),
                             requiresRegistration: rule.requiresRegistration || false,
@@ -125,6 +130,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             region: rule.region || 'japan',
                             paymentMethods: rule.paymentMethods || [],
                             minAmount: rule.minAmount ? rule.minAmount.toString() : '',
+                            minAmountCurrency: rule.minAmountCurrency || 'TWD',
                             startDate: rule.startDate || '',
                             endDate: rule.endDate || ''
                         }));
@@ -159,6 +165,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[]
                 : [],
             capAmount: ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
+            capAmountCurrency: ruleState.capAmount ? ruleState.capAmountCurrency : undefined,
             capPeriod: ruleState.capPeriod,
             requiresRegistration: ruleState.requiresRegistration,
             specificMerchants: ruleState.specificMerchants
@@ -167,6 +174,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             region: ruleState.region,
             paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined,
             minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined,
+            minAmountCurrency: ruleState.minAmount ? ruleState.minAmountCurrency : undefined,
             startDate: ruleState.startDate || undefined, // Only include if set
             endDate: ruleState.endDate || undefined       // Only include if set
         }));
@@ -207,6 +215,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             name: '新加碼活動',
             rate: '3',
             capAmount: '',
+            capAmountCurrency: 'TWD',
             capPeriod: 'monthly',
             checkJapan: false,
             requiresRegistration: false,
@@ -214,6 +223,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             region: 'japan',
             paymentMethods: [],
             minAmount: '',
+            minAmountCurrency: 'TWD',
             startDate: '',
             endDate: ''
         }]);
@@ -525,9 +535,17 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                     className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                                 />
                                                 <select
+                                                    value={rule.capAmountCurrency}
+                                                    onChange={e => updateRule(rule.id, 'capAmountCurrency', e.target.value)}
+                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-20 flex-shrink-0"
+                                                >
+                                                    <option value="TWD">TWD</option>
+                                                    <option value="JPY">JPY</option>
+                                                </select>
+                                                <select
                                                     value={rule.capPeriod}
                                                     onChange={e => updateRule(rule.id, 'capPeriod', e.target.value)}
-                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-24 flex-shrink-0"
+                                                    className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-20 flex-shrink-0"
                                                 >
                                                     <option value="monthly">/月</option>
                                                     <option value="campaign">/總</option>
@@ -547,10 +565,17 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                 onChange={e => updateRule(rule.id, 'minAmount', e.target.value)}
                                                 className="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
-                                            <span className="text-xs font-medium text-gray-500 px-2 py-2 bg-gray-100 rounded-lg border border-gray-200">TWD</span>
+                                            <select
+                                                value={rule.minAmountCurrency}
+                                                onChange={e => updateRule(rule.id, 'minAmountCurrency', e.target.value)}
+                                                className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-20 flex-shrink-0"
+                                            >
+                                                <option value="TWD">TWD</option>
+                                                <option value="JPY">JPY</option>
+                                            </select>
                                         </div>
                                         <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
-                                            💡 單筆消費需達此台幣金額才享有此回饋（日幣消費會自動換算）
+                                            💡 單筆消費需達此金額才享有此回饋（系統會自動處理幣別轉換）
                                         </p>
                                     </div>
 

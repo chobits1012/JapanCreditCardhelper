@@ -29,12 +29,16 @@ export interface BonusRule {
     categories: MerchantCategory[]; // 適用通路
     specificMerchants?: string[];   // 特定店家 (例如 ["Don Quijote"])
     paymentMethods?: string[];      // 限制支付方式 (例如 ["Apple Pay", "QUICPay"])
+
     minAmount?: number;             // 最低消費門檻
+    minAmountCurrency?: 'TWD' | 'JPY'; // 門檻幣別（預設 TWD）
+
     requiresRegistration?: boolean; // 是否需要登錄 (New)
     note?: string;                  // 備註 (New)
 
     // 上限設定
     capAmount?: number;             // 回饋上限金額 (undefined 代表無上限)
+    capAmountCurrency?: 'TWD' | 'JPY'; // 上限幣別（預設 TWD）
     capPeriod?: 'monthly' | 'campaign' | 'annual'; // 上限週期 (New: campaign = 活動期間總上限)
 
     // 狀態追蹤 (Runtime calculated - NOT persisted in rule definition)
