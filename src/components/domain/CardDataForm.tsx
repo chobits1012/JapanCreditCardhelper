@@ -544,7 +544,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                                 placeholder="無上限"
                                                 value={rule.capAmount}
                                                 onChange={e => updateRule(rule.id, 'capAmount', e.target.value)}
-                                                className="w-28 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                                className="w-24 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
                                         </div>
 
