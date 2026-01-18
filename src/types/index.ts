@@ -21,6 +21,10 @@ export interface BonusRule {
     rate: number; // 回饋率 (例如 0.03 代表 3%)
     region?: 'global' | 'japan' | 'taiwan'; // 適用地區 (New)
 
+    // 個別規則期限 (Optional - 未設定時使用 RewardProgram 的期限)
+    startDate?: string; // ISO Date - 此規則的開始日期
+    endDate?: string;   // ISO Date - 此規則的結束日期
+
     // 適用條件
     categories: MerchantCategory[]; // 適用通路
     specificMerchants?: string[];   // 特定店家 (例如 ["Don Quijote"])

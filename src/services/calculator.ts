@@ -109,6 +109,20 @@ export function calculateReward(
 
     // 2. Bonus Rules
     for (const rule of program.bonusRules) {
+        // CHECK 0: Individual Rule Date Validation (if specified)
+        // If rule has its own startDate/endDate, check if transaction falls within that period
+        if (rule.startDate || rule.endDate) {
+            const txDate = parseISO(transaction.date);
+
+            if (rule.startDate && txDate < parseISO(rule.startDate)) {
+                continue; // Rule not yet active
+            }
+
+            if (rule.endDate && txDate > parseISO(rule.endDate)) {
+                continue; // Rule has expired
+            }
+        }
+
         // Filter by Region Strategy
         // If mode is 'travel' -> Allow 'global' OR 'japan'
         // If mode is 'daily'  -> Allow 'global' OR 'taiwan'

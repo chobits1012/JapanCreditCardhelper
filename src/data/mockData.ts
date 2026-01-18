@@ -32,6 +32,19 @@ export const MOCK_CARDS: CreditCard[] = [
                         specificMerchants: ['Lawson', 'FamilyMart', '7-Eleven', 'Matsumotokiyoshi'],
                         capAmount: 600,
                         requiresRegistration: true,
+                    },
+                    {
+                        id: 'jcb-spring-2025',
+                        name: 'JCB 組織春季加碼 (2/1-4/30)',
+                        rate: 0.10, // 10000 JPY / 100000 JPY = 10%
+                        categories: [], // 全通路適用
+                        minAmount: 100000 * 0.22, // JPY 100000 roughly = TWD 22000 (adjustable by actual rate)
+                        capAmount: 10000, // TWD 10000 回饋上限
+                        capPeriod: 'campaign',
+                        startDate: '2025-02-01', // 個別規則開始日期
+                        endDate: '2025-04-30',   // 個別規則結束日期
+                        requiresRegistration: true,
+                        note: '需事先登錄 JCB 卡片，活動期間內消費滿 100,000 日幣回饋 10,000 日幣'
                     }
                 ]
             }
