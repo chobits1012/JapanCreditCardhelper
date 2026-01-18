@@ -114,15 +114,19 @@ export default function ProgressPage() {
                                             const isNearLimit = percent >= 80;
                                             const isFull = percent >= 100;
 
+                                            // Determine currency symbol
+                                            const currency = rule.capAmountCurrency || 'TWD';
+                                            const currencySymbol = currency === 'JPY' ? '¥' : '$';
+
                                             return (
                                                 <div key={rule.id} className="space-y-2.5">
                                                     <div className="flex justify-between items-end">
                                                         <span className="text-sm font-medium text-slate-700">{rule.name}</span>
                                                         <div className="text-right">
                                                             <span className={`text-xs font-bold font-mono ${isFull ? 'text-rose-500' : isNearLimit ? 'text-amber-500' : 'text-indigo-600'}`}>
-                                                                ${used.toLocaleString()}
+                                                                {currencySymbol}{used.toLocaleString()}
                                                             </span>
-                                                            <span className="text-[10px] text-slate-400 font-medium ml-1">/ ${cap.toLocaleString()}</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium ml-1">/ {currencySymbol}{cap.toLocaleString()}</span>
                                                         </div>
                                                     </div>
 

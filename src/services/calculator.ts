@@ -6,12 +6,14 @@ export interface CalculationResult {
     totalReward: number;
     totalRate: number; // e.g. 0.035 for 3.5%
     breakdown: {
-        ruleId: string; // Add this
+        ruleId: string;
         ruleName: string;
-        amount: number;
+        amount: number; // Reward value (always TWD)
         rate: number;
         capped: boolean; // true if hit cap
         capLimit?: number; // defined if rule has a cap
+        usageAmount?: number; // Usage amount in rule's currency
+        usageCurrency?: 'TWD' | 'JPY'; // Currency for usage tracking
     }[];
     warnings: string[];
     transactionFee: number;
@@ -201,13 +203,21 @@ export function calculateReward(
                         : rule.capAmount)
                     : undefined;
 
+                // Calculate usage in rule's original currency
+                const usageCurrency = rule.capAmountCurrency || 'TWD';
+                const usageAmount = usageCurrency === 'JPY'
+                    ? Math.floor(bonusAmount / exchangeRate)
+                    : bonusAmount;
+
                 result.breakdown.push({
                     ruleId: rule.id,
                     ruleName: rule.name,
                     amount: bonusAmount,
                     rate: rule.rate,
                     capped: isCapped,
-                    capLimit: displayCapLimit
+                    capLimit: displayCapLimit,
+                    usageAmount,
+                    usageCurrency
                 });
                 result.totalReward += bonusAmount;
             }

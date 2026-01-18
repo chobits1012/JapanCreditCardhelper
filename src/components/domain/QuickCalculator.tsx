@@ -142,10 +142,12 @@ export default function QuickCalculator() {
     const handleSave = (res: CalculationResult) => {
         const baseTx = createBaseTransaction();
 
-        // Convert breakdown to usage map
+        // Convert breakdown to usage map (using original currency for each rule)
         const ruleUsageMap: Record<string, number> = {};
         res.breakdown.forEach(item => {
-            ruleUsageMap[item.ruleId] = (ruleUsageMap[item.ruleId] || 0) + item.amount;
+            // Use usageAmount (in rule's currency) if available, fallback to amount (TWD)
+            const usage = item.usageAmount ?? item.amount;
+            ruleUsageMap[item.ruleId] = (ruleUsageMap[item.ruleId] || 0) + usage;
         });
 
         const transactionToSave = {
@@ -413,7 +415,11 @@ export default function QuickCalculator() {
                                                             </span>
                                                             {cap > 0 && (
                                                                 <span className={`text-[9px] px-1.5 py-0 rounded ${isNearCap ? 'bg-red-100 text-red-600 font-bold' : 'bg-slate-100 text-slate-400'}`}>
-                                                                    剩 ${remaining.toLocaleString()}
+                                                                    {rule.usageCurrency === 'JPY' ? (
+                                                                        <>剩 ¥{remaining.toLocaleString()}</>
+                                                                    ) : (
+                                                                        <>剩 ${remaining.toLocaleString()}</>
+                                                                    )}
                                                                 </span>
                                                             )}
                                                             {minAmount && (
