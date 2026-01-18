@@ -24,6 +24,8 @@ interface BonusRuleState {
     region: 'global' | 'japan' | 'taiwan';
     paymentMethods: string[]; // Selected payment methods
     minAmount: string; // Minimum transaction amount in TWD
+    startDate: string; // Individual rule start date (ISO)
+    endDate: string;   // Individual rule end date (ISO)
 }
 
 const PAYMENT_OPTIONS = [
@@ -56,7 +58,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         requiresRegistration: rule.requiresRegistration || false,
         specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
         paymentMethods: rule.paymentMethods || [],
-        minAmount: rule.minAmount ? rule.minAmount.toString() : ''
+        minAmount: rule.minAmount ? rule.minAmount.toString() : '',
+        startDate: rule.startDate || '', // Individual rule start date
+        endDate: rule.endDate || ''      // Individual rule end date
     })) || [];
 
     const [name, setName] = useState(initialCard?.name || '');
@@ -120,7 +124,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
                             region: rule.region || 'japan',
                             paymentMethods: rule.paymentMethods || [],
-                            minAmount: rule.minAmount ? rule.minAmount.toString() : ''
+                            minAmount: rule.minAmount ? rule.minAmount.toString() : '',
+                            startDate: rule.startDate || '',
+                            endDate: rule.endDate || ''
                         }));
                         setBonusRules(newRules);
                     }
@@ -160,7 +166,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 : undefined,
             region: ruleState.region,
             paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined,
-            minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined
+            minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined,
+            startDate: ruleState.startDate || undefined, // Only include if set
+            endDate: ruleState.endDate || undefined       // Only include if set
         }));
 
         const updatedProgram = {
@@ -205,7 +213,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             specificMerchants: '',
             region: 'japan',
             paymentMethods: [],
-            minAmount: ''
+            minAmount: '',
+            startDate: '',
+            endDate: ''
         }]);
     };
 
@@ -589,6 +599,41 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                             className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                                         />
                                     </div>
+
+                                    {/* Individual Rule Date Range (Optional) */}
+                                    <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-blue-600 uppercase">
+                                                    🗓️ 個別活動期限 (選填)
+                                                </label>
+                                                <p className="text-[10px] text-blue-500 mt-0.5">
+                                                    未設定時將使用上方「權益期間」的整體期限
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 mt-2">
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-gray-500 mb-1">開始日期</label>
+                                                <input
+                                                    type="date"
+                                                    value={rule.startDate}
+                                                    onChange={e => updateRule(rule.id, 'startDate', e.target.value)}
+                                                    className="w-full p-2 bg-white border border-blue-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-gray-500 mb-1">結束日期</label>
+                                                <input
+                                                    type="date"
+                                                    value={rule.endDate}
+                                                    onChange={e => updateRule(rule.id, 'endDate', e.target.value)}
+                                                    className="w-full p-2 bg-white border border-blue-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="pt-2 space-y-2">
                                         <label className="flex items-center space-x-2">
                                             <input
