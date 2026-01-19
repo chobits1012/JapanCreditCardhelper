@@ -1,35 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import type { CreditCard, MerchantCategory } from '../../types';
+import type { CreditCard } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Trash2, Smartphone, CreditCard as CreditCardIcon } from 'lucide-react';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
 import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
 import ConfirmModal from '../ui/ConfirmModal';
+import {
+    type BonusRuleState,
+    createBonusRuleStatesFromRules,
+    createEmptyBonusRuleState,
+    convertToDomainBonusRules,
+} from '../../utils/bonusRuleHelpers';
 
 interface CardDataFormProps {
     onBack: () => void;
     initialCard?: CreditCard;
 }
 
-interface BonusRuleState {
-    id: string;
-    name: string;
-    rate: string;
-    capAmount: string;
-    capAmountCurrency: 'TWD' | 'JPY';
-    capPeriod: 'monthly' | 'campaign';
-    checkJapan: boolean;
-    requiresRegistration: boolean;
-    specificMerchants: string; // comma separated
-    region: 'global' | 'japan' | 'taiwan';
-    paymentMethods: string[]; // Selected payment methods
-    minAmount: string;
-    minAmountCurrency: 'TWD' | 'JPY';
-    startDate: string; // Individual rule start date (ISO)
-    endDate: string;   // Individual rule end date (ISO)
-    createdAt: number; // Timestamp for display ordering (UI only)
-}
+// BonusRuleState is now imported from utils/bonusRuleHelpers.ts
 
 const PAYMENT_OPTIONS = [
     { id: 'Apple Pay', label: 'Apple Pay', icon: <Smartphone className="w-3 h-3" /> },
@@ -48,26 +37,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     // --- State Initialization ---
     const activeProgram = initialCard?.programs[0];
 
-    // Initialize Bonus Rules
-    const initialRules: BonusRuleState[] = activeProgram?.bonusRules.map((rule, index) => ({
-        id: rule.id,
-        name: rule.name,
-        rate: (rule.rate * 100).toString(),
-        capAmount: rule.capAmount ? rule.capAmount.toString() : '',
-        capAmountCurrency: rule.capAmountCurrency || 'TWD',
-        capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
-        checkJapan: rule.categories.includes('general_japan'),
-        region: rule.region || 'japan', // Default to japan for existing rules
-
-        requiresRegistration: rule.requiresRegistration || false,
-        specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
-        paymentMethods: rule.paymentMethods || [],
-        minAmount: rule.minAmount ? rule.minAmount.toString() : '',
-        minAmountCurrency: rule.minAmountCurrency || 'TWD',
-        startDate: rule.startDate || '', // Individual rule start date
-        endDate: rule.endDate || '',      // Individual rule end date
-        createdAt: index // Use index as timestamp for existing rules
-    })) || [];
+    // Initialize Bonus Rules using centralized helper
+    const initialRules: BonusRuleState[] = activeProgram?.bonusRules
+        ? createBonusRuleStatesFromRules(activeProgram.bonusRules)
+        : [];
 
     const [name, setName] = useState(initialCard?.name || '');
     const [bank, setBank] = useState(initialCard?.bank || '');
@@ -98,25 +71,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     // Reinitialize bonusRules when initialCard changes (fixes bug where new rules disappear)
     useEffect(() => {
         if (activeProgram) {
-            const updatedRules: BonusRuleState[] = activeProgram.bonusRules.map((rule, index) => ({
-                id: rule.id,
-                name: rule.name,
-                rate: (rule.rate * 100).toString(),
-                capAmount: rule.capAmount ? rule.capAmount.toString() : '',
-                capAmountCurrency: rule.capAmountCurrency || 'TWD',
-                capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
-                checkJapan: rule.categories.includes('general_japan'),
-                region: rule.region || 'japan',
-                requiresRegistration: rule.requiresRegistration || false,
-                specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
-                paymentMethods: rule.paymentMethods || [],
-                minAmount: rule.minAmount ? rule.minAmount.toString() : '',
-                minAmountCurrency: rule.minAmountCurrency || 'TWD',
-                startDate: rule.startDate || '',
-                endDate: rule.endDate || '',
-                createdAt: index
-            }));
-            setBonusRules(updatedRules);
+            setBonusRules(createBonusRuleStatesFromRules(activeProgram.bonusRules));
         }
     }, [initialCard?.id, activeProgram?.bonusRules.length]); // Re-run when card changes or rules count changes
 
@@ -145,23 +100,10 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     setBaseRateDomestic((prog.baseRateDomestic * 100).toString());
 
                     if (prog.bonusRules && prog.bonusRules.length > 0) {
-                        const newRules: BonusRuleState[] = prog.bonusRules.map((rule, index) => ({
-                            id: crypto.randomUUID(),
-                            name: rule.name,
-                            rate: (rule.rate * 100).toString(),
-                            capAmount: rule.capAmount ? rule.capAmount.toString() : '',
-                            capAmountCurrency: rule.capAmountCurrency || 'TWD',
-                            capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
-                            checkJapan: rule.categories.includes('general_japan'),
-                            requiresRegistration: rule.requiresRegistration || false,
-                            specificMerchants: rule.specificMerchants ? rule.specificMerchants.join(', ') : '',
-                            region: rule.region || 'japan',
-                            paymentMethods: rule.paymentMethods || [],
-                            minAmount: rule.minAmount ? rule.minAmount.toString() : '',
-                            minAmountCurrency: rule.minAmountCurrency || 'TWD',
-                            startDate: rule.startDate || '',
-                            endDate: rule.endDate || '',
-                            createdAt: index
+                        // Use helper but generate new IDs for template rules
+                        const newRules = createBonusRuleStatesFromRules(prog.bonusRules).map(r => ({
+                            ...r,
+                            id: crypto.randomUUID(), // Generate new IDs for template rules
                         }));
                         setBonusRules(newRules);
                     }
@@ -185,31 +127,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         const cardId = initialCard?.id || crypto.randomUUID();
         const programId = activeProgram?.id || crypto.randomUUID();
 
-        // Convert BonusRuleState back to Domain BonusRule
-        // Sort by createdAt before saving to maintain chronological order
-        const sortedBonusRules = [...bonusRules].sort((a, b) => a.createdAt - b.createdAt);
-
-        const domainBonusRules = sortedBonusRules.map(ruleState => ({
-            id: ruleState.id,
-            name: ruleState.name,
-            rate: parseFloat(ruleState.rate) / 100,
-            categories: ruleState.checkJapan
-                ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[]
-                : [],
-            capAmount: ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
-            capAmountCurrency: ruleState.capAmount ? ruleState.capAmountCurrency : undefined,
-            capPeriod: ruleState.capPeriod,
-            requiresRegistration: ruleState.requiresRegistration,
-            specificMerchants: ruleState.specificMerchants
-                ? ruleState.specificMerchants.split(/[,，]/).map(s => s.trim()).filter(Boolean)
-                : undefined,
-            region: ruleState.region,
-            paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined,
-            minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined,
-            minAmountCurrency: ruleState.minAmount ? ruleState.minAmountCurrency : undefined,
-            startDate: ruleState.startDate || undefined, // Only include if set
-            endDate: ruleState.endDate || undefined       // Only include if set
-        }));
+        // Convert BonusRuleState back to Domain BonusRule using centralized helper
+        const domainBonusRules = convertToDomainBonusRules(bonusRules);
 
         const updatedProgram = {
             id: programId,
@@ -243,24 +162,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     const addRule = () => {
         // Add new rule at the beginning (top) with current timestamp
-        setBonusRules([{
-            id: crypto.randomUUID(),
-            name: '新加碼活動',
-            rate: '3',
-            capAmount: '',
-            capAmountCurrency: 'TWD',
-            capPeriod: 'monthly',
-            checkJapan: false,
-            requiresRegistration: false,
-            specificMerchants: '',
-            region: 'japan',
-            paymentMethods: [],
-            minAmount: '',
-            minAmountCurrency: 'TWD',
-            startDate: '',
-            endDate: '',
-            createdAt: Date.now() // Current timestamp ensures it sorts last when saving
-        }, ...bonusRules]);
+        setBonusRules([createEmptyBonusRuleState(), ...bonusRules]);
     };
 
     const removeRule = (id: string) => {
