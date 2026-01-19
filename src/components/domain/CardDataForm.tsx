@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Trash2, Smartphone, CreditCard as CreditCardIcon } from 'lucide-react';
@@ -7,11 +7,10 @@ import { MockBankService } from '../../services/bankData';
 import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
 import ConfirmModal from '../ui/ConfirmModal';
 import {
-    type BonusRuleState,
     createBonusRuleStatesFromRules,
-    createEmptyBonusRuleState,
     convertToDomainBonusRules,
 } from '../../utils/bonusRuleHelpers';
+import { useBonusRules } from '../../hooks/useBonusRules';
 
 interface CardDataFormProps {
     onBack: () => void;
@@ -37,11 +36,20 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     // --- State Initialization ---
     const activeProgram = initialCard?.programs[0];
 
-    // Initialize Bonus Rules using centralized helper
-    const initialRules: BonusRuleState[] = activeProgram?.bonusRules
-        ? createBonusRuleStatesFromRules(activeProgram.bonusRules)
-        : [];
+    // Bonus Rules - managed by custom hook
+    const {
+        bonusRules,
+        setBonusRules,
+        addRule,
+        removeRule,
+        updateRule,
+        toggleRulePaymentMethod,
+    } = useBonusRules({
+        initialRules: activeProgram?.bonusRules,
+        syncDeps: [initialCard?.id, activeProgram?.bonusRules.length],
+    });
 
+    // Card Form State
     const [name, setName] = useState(initialCard?.name || '');
     const [bank, setBank] = useState(initialCard?.bank || '');
     // Initialize theme: from card data OR predict from name/bank if editing
@@ -59,22 +67,11 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
     const [programEndDate, setProgramEndDate] = useState(activeProgram?.endDate || format(addYears(new Date(), 2), 'yyyy-MM-dd'));
     const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
 
-    // Bonus Rule State Array
-    const [bonusRules, setBonusRules] = useState<BonusRuleState[]>(initialRules);
-
     // Auto-fill State
     const [isSearching, setIsSearching] = useState(false);
 
     // Delete Confirmation State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    // Reinitialize bonusRules when initialCard changes (fixes bug where new rules disappear)
-    useEffect(() => {
-        if (activeProgram) {
-            setBonusRules(createBonusRuleStatesFromRules(activeProgram.bonusRules));
-        }
-    }, [initialCard?.id, activeProgram?.bonusRules.length]); // Re-run when card changes or rules count changes
-
 
     const handleAutoFill = async () => {
         if (!bank && !name) {
@@ -158,34 +155,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             addCard(cardData);
         }
         onBack();
-    };
-
-    const addRule = () => {
-        // Add new rule at the beginning (top) with current timestamp
-        setBonusRules([createEmptyBonusRuleState(), ...bonusRules]);
-    };
-
-    const removeRule = (id: string) => {
-        setBonusRules(bonusRules.filter(r => r.id !== id));
-    };
-
-    const updateRule = (id: string, field: keyof BonusRuleState, value: any) => {
-        setBonusRules(bonusRules.map(r =>
-            r.id === id ? { ...r, [field]: value } : r
-        ));
-    };
-
-    const toggleRulePaymentMethod = (ruleId: string, method: string) => {
-        setBonusRules(bonusRules.map(r => {
-            if (r.id === ruleId) {
-                const current = r.paymentMethods;
-                const next = current.includes(method)
-                    ? current.filter(m => m !== method)
-                    : [...current, method];
-                return { ...r, paymentMethods: next };
-            }
-            return r;
-        }));
     };
 
     const handleConfirmDelete = () => {
