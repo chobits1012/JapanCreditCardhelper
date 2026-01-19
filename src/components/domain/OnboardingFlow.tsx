@@ -33,7 +33,7 @@ export default function OnboardingFlow() {
         {
             icon: Check,
             title: '開始設定您的卡片',
-            description: '前往「我的錢包」\n勾選您實際擁有的信用卡',
+            description: '前往「卡片」頁面\n勾選您實際擁有的信用卡',
             gradient: 'from-emerald-500 to-green-600',
             iconBg: 'from-emerald-400 to-green-500',
             cta: true,
@@ -162,8 +162,8 @@ export default function OnboardingFlow() {
                             key={index}
                             onClick={() => setCurrentSlide(index)}
                             className={`h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                    ? 'w-10 bg-indigo-600 shadow-lg shadow-indigo-300/50'
-                                    : 'w-2 bg-gray-300 hover:bg-gray-400'
+                                ? 'w-10 bg-indigo-600 shadow-lg shadow-indigo-300/50'
+                                : 'w-2 bg-gray-300 hover:bg-gray-400'
                                 }`}
                             aria-label={`前往第 ${index + 1} 頁`}
                         />
@@ -191,7 +191,7 @@ export default function OnboardingFlow() {
                         transition={{ delay: 0.3 }}
                         className="text-center text-xs text-gray-400"
                     >
-                        您可以隨時在「我的錢包」管理您的信用卡
+                        您可以隨時在「卡片」頁面管理您的信用卡
                     </motion.p>
                 )}
             </motion.div>
