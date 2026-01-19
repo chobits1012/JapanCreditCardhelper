@@ -1,151 +1,14 @@
 import { useState } from 'react';
-import { Plus, Trash2, CreditCard as CardIcon, ChevronRight, LayoutList, LayoutGrid, Layers } from 'lucide-react';
+import { Plus, Trash2, LayoutList, LayoutGrid, Layers } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import CardDataForm from './CardDataForm';
 import CardDetailView from './CardDetailView';
 import ConfirmModal from '../ui/ConfirmModal';
+import CreditCardListItem, { CardLogo } from './CreditCardListItem';
+import CardGridItem from './CardGridItem';
+import { getCardStyle, getDisplayRate } from './cardHelpers';
 import type { CreditCard } from '../../types';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-
-// Helper to get card style based on bank/name
-import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
-
-// Helper to get card style based on theme or bank/name
-const getCardStyle = (card: CreditCard) => {
-    // 1. Use manual theme if set
-    if (card.colorTheme) {
-        const theme = CARD_THEMES.find(t => t.id === card.colorTheme);
-        if (theme) return theme.class;
-    }
-
-    // 2. Fallback to keyword matching
-    const themeId = getThemeByKeyword(card.bank, card.name);
-    const theme = CARD_THEMES.find(t => t.id === themeId);
-    return theme ? theme.class : CARD_THEMES.find(t => t.id === 'matte_black')!.class;
-};
-
-// Helper: Card Logo / Icon
-const CardLogo = () => {
-    return (
-        <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-            <CardIcon className="w-4 h-4 text-white" />
-        </div>
-    );
-};
-
-// --- Reusable List Card Component ---
-interface CreditCardListItemProps {
-    card: CreditCard;
-    isActive: boolean;
-    displayRate: string;
-    gradientClass: string;
-    onClick: () => void;
-    onToggle: () => void;
-    onDeleteRequest: () => void;
-    layoutId?: string;
-    transition?: any;
-    // For stack mode focus specific styles
-    className?: string;
-}
-
-const CreditCardListItem = ({ card, isActive, displayRate, gradientClass, onClick, onToggle, onDeleteRequest, layoutId, transition, className }: CreditCardListItemProps) => {
-    return (
-        <motion.div
-            layoutId={layoutId}
-            layout
-            className={`w-full h-48 overflow-hidden rounded-3xl relative group ${className || ''}`}
-            // Remove initial/exit/animate here to let parent control presence or layout
-            transition={transition || { type: "spring", stiffness: 260, damping: 20 }}
-        >
-            <div className="flex w-full overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1 h-full items-center">
-                {/* Main Card Content - Snap Center */}
-                <div className="min-w-full h-full snap-center pl-0.5 pr-0.5 py-1">
-                    <div
-                        onClick={onClick}
-                        className={`w-full h-full rounded-2xl p-5 relative overflow-hidden transition-all duration-300 flex flex-col justify-between cursor-pointer shadow-lg
-                            ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
-                        `}
-                    >
-                        {/* Decorative Circles */}
-                        <motion.div layout className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-                        <motion.div layout className="absolute top-20 -left-10 w-32 h-32 bg-black/5 rounded-full blur-xl" />
-
-                        {/* Top Row */}
-                        <div className="relative z-10 flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                                <CardLogo />
-                                <div>
-                                    <motion.h3 layout="position" className="text-white font-bold text-lg leading-tight tracking-wide shadow-black/10 drop-shadow-md">
-                                        {card.name}
-                                    </motion.h3>
-                                    <p className="text-white/80 text-[10px] font-medium tracking-wider uppercase">
-                                        {card.bank}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Status Toggle */}
-                            <motion.button
-                                layout
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggle();
-                                }}
-                                whileTap={{ scale: 0.9 }}
-                                className={`w-10 h-6 rounded-full p-1 flex items-center active:rotate-3 ease-out
-                                    ${isActive ? 'bg-white/90 justify-end shadow-md' : 'bg-black/20 justify-start'}
-                                `}
-                            >
-                                <motion.div
-                                    layout
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className={`w-4 h-4 rounded-full shadow-sm ${isActive ? 'bg-indigo-600' : 'bg-white/50'}`}
-                                />
-                            </motion.button>
-                        </div>
-
-                        {/* Middle/Bottom Info */}
-                        <div className="relative z-10 mt-auto">
-                            <div className="flex items-end justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-white/60 text-[10px] font-mono tracking-widest">**** **** ****</span>
-                                        <span className="text-white/90 text-xs font-mono font-bold tracking-widest">8888</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md border border-white/10">
-                                            <span className="text-[10px] font-bold text-white">🇯🇵 最高 {displayRate}%</span>
-                                        </div>
-                                        <div className="px-2 py-0.5 bg-black/10 backdrop-blur-md rounded-md border border-white/5">
-                                            <span className="text-[10px] text-white/80">手續費 {card.foreignTxFee}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm group-active:scale-95">
-                                    <ChevronRight className="w-5 h-5 text-white" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Delete Button - Snap Center (Revealed on swipe) */}
-                <div className="min-w-[80px] h-[90%] snap-center flex items-center justify-center pl-3 pr-1">
-                    <button
-                        onClick={onDeleteRequest}
-                        className="w-full h-full bg-red-50 text-red-500 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-red-100 shadow-sm"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                            <Trash2 className="w-5 h-5 text-red-600" />
-                        </div>
-                        <span className="text-[10px] font-bold tracking-wide">刪除卡片</span>
-                    </button>
-                </div>
-            </div>
-        </motion.div>
-    );
-};
 
 export default function MyCardsPage() {
     const { cards, activeCardIds, toggleCard, removeCard } = useStore();
@@ -264,53 +127,21 @@ export default function MyCardsPage() {
                         {cards.map((card, index) => {
                             const isActive = activeCardIds.includes(card.id);
                             const gradientClass = getCardStyle(card);
-
-                            const programs = card.programs || [];
-                            const currentProgram = programs[0];
-                            const baseRate = currentProgram ? currentProgram.baseRateOverseas : 0;
-                            const maxBonus = currentProgram ? Math.max(0, ...currentProgram.bonusRules.filter(r => r.region === 'japan' || !r.region).map(r => r.rate)) : 0;
-                            const totalMaxRate = baseRate + maxBonus;
-                            const displayRate = (totalMaxRate * 100).toFixed(1);
+                            const displayRate = getDisplayRate(card);
 
                             // --- GRID VIEW ---
                             if (viewMode === 'grid') {
                                 return (
-                                    <motion.div
-                                        layoutId={`card-${card.id}`}
+                                    <CardGridItem
                                         key={card.id}
+                                        layoutId={`card-${card.id}`}
+                                        card={card}
+                                        isActive={isActive}
+                                        displayRate={displayRate}
+                                        gradientClass={gradientClass}
                                         onClick={() => handleOpenDetail(card)}
-                                        className={`aspect-[4/3] rounded-2xl p-4 relative overflow-hidden cursor-pointer shadow-sm
-                                    ${isActive ? gradientClass : 'bg-slate-200 grayscale-[0.8] opacity-80'}
-                                `}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <motion.div layout className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-
-                                        <div className="relative z-10 flex flex-col h-full justify-between">
-                                            <div className="flex justify-between items-start">
-                                                <CardLogo />
-                                                {/* Status Dot */}
-                                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.5)]' : 'bg-slate-400/50'}`}></div>
-                                            </div>
-                                            <div>
-                                                <motion.h3 layout="position" className="text-white font-bold text-sm leading-tight shadow-black/10 drop-shadow-md line-clamp-2 mb-1">
-                                                    {card.name}
-                                                </motion.h3>
-                                                <motion.div layout className="inline-block px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded border border-white/10">
-                                                    <span className="text-[10px] font-bold text-white">🇯🇵 {displayRate}%</span>
-                                                </motion.div>
-                                            </div>
-                                        </div>
-                                        {/* Header Toggle Overlay for Grid */}
-                                        <div className="absolute top-2 right-2 z-20" onClick={e => e.stopPropagation()}>
-                                            <button
-                                                onClick={() => toggleCard(card.id)}
-                                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-white/20 text-white' : 'bg-black/20 text-white/50'}`}
-                                            >
-                                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-400' : 'bg-white/50'}`} />
-                                            </button>
-                                        </div>
-                                    </motion.div>
+                                        onToggle={() => toggleCard(card.id)}
+                                    />
                                 );
                             }
 
