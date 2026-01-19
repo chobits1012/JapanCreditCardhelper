@@ -175,20 +175,21 @@ export function calculateReward(
             let isCapped = false;
 
             // Check Cap (Currency-Aware)
-            // Reward caps are enforced in TWD (point value)
-            // - If capAmountCurrency is 'JPY': Convert JPY to TWD first
-            // - If capAmountCurrency is 'TWD' or undefined: Use directly (default)
+            // Now that we track usage in original currency, we need to compare in the same currency
             if (rule.capAmount !== undefined) {
-                // Convert cap to TWD if necessary
-                const capAmountTWD = rule.capAmountCurrency === 'JPY'
-                    ? Math.floor(rule.capAmount * exchangeRate)
-                    : rule.capAmount;
-
+                const capCurrency = rule.capAmountCurrency || 'TWD';
                 const used = usageMap[rule.id] || 0;
-                const remaining = Math.max(0, capAmountTWD - used);
 
-                if (bonusAmount > remaining) {
-                    bonusAmount = remaining;
+                // Compare in the rule's original currency
+                const remaining = Math.max(0, rule.capAmount - used);
+
+                // Convert remaining to TWD for comparison with bonusAmount
+                const remainingTWD = capCurrency === 'JPY'
+                    ? Math.floor(remaining * exchangeRate)
+                    : remaining;
+
+                if (bonusAmount > remainingTWD) {
+                    bonusAmount = remainingTWD;
                     isCapped = true;
                     result.warnings.push(`Rule "${rule.name}" hit cap.`);
                 }

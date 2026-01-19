@@ -119,7 +119,7 @@ export default function CardDetailView({ card, onBack, onEdit, gradientClass }: 
                                                     <div className="flex items-center space-x-2">
                                                         <span>回饋上限</span>
                                                         <span className="font-medium text-gray-700">
-                                                            {rule.capAmount ? `$${rule.capAmount}` : '無上限'}
+                                                            {rule.capAmount ? `${rule.capAmountCurrency === 'JPY' ? '¥' : '$'}${rule.capAmount.toLocaleString()} ${rule.capAmountCurrency || 'TWD'}` : '無上限'}
                                                         </span>
                                                     </div>
                                                     {rule.requiresRegistration && (
@@ -132,7 +132,7 @@ export default function CardDetailView({ card, onBack, onEdit, gradientClass }: 
                                                     <div className="flex items-center gap-1.5 text-xs">
                                                         <span className="text-gray-500">單筆門檻</span>
                                                         <span className="font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                                                            ≥ ${rule.minAmount.toLocaleString()} TWD
+                                                            ≥ {rule.minAmountCurrency === 'JPY' ? '¥' : '$'}{rule.minAmount.toLocaleString()} {rule.minAmountCurrency || 'TWD'}
                                                         </span>
                                                     </div>
                                                 )}
