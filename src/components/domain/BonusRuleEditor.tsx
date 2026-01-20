@@ -5,7 +5,8 @@
  * Extracted from CardDataForm to improve maintainability.
  */
 
-import { Trash2, Smartphone, CreditCard as CreditCardIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, Smartphone, CreditCard as CreditCardIcon, AlertTriangle } from 'lucide-react';
 import type { BonusRuleState } from '../../utils/bonusRuleHelpers';
 
 const PAYMENT_OPTIONS = [
@@ -38,11 +39,54 @@ export default function BonusRuleEditor({
     onRemove,
     onTogglePaymentMethod,
 }: BonusRuleEditorProps) {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const handleRemoveClick = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = () => {
+        setShowDeleteConfirm(false);
+        onRemove();
+    };
+
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 relative group">
-            <div className="absolute top-4 right-4 text-gray-300 hover:text-red-500 cursor-pointer transition-colors" onClick={onRemove}>
+            <div
+                className="absolute top-4 right-4 text-gray-300 hover:text-red-500 cursor-pointer transition-colors"
+                onClick={handleRemoveClick}
+            >
                 <Trash2 className="w-4 h-4" />
             </div>
+
+            {/* Delete Confirmation Overlay */}
+            {showDeleteConfirm && (
+                <div className="absolute inset-0 bg-white/95 rounded-xl z-10 flex flex-col items-center justify-center gap-3 p-4 animate-in fade-in duration-200">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-6 h-6 text-red-500" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-800 text-center">
+                        確定要刪除「{rule.name}」嗎？
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleConfirmDelete}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                            確認刪除
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">活動 #{index}</h3>
 
             <div className="space-y-4">
