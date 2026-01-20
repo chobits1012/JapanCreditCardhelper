@@ -43,7 +43,7 @@ export const BONUS_PRESETS: BonusPreset[] = [
         ruleData: {
             name: 'JCB 春季加碼',
             rate: '10',                         // 10% 回饋
-            startDate: '2026-02-02',
+            startDate: '2026-02-01',
             endDate: '2026-04-30',
             capAmount: '10000',                 // 回饋上限 10000 JPY
             capAmountCurrency: 'JPY',
