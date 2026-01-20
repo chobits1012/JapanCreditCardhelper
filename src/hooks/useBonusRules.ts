@@ -27,12 +27,18 @@ interface UseBonusRulesReturn {
     setBonusRules: React.Dispatch<React.SetStateAction<BonusRuleState[]>>;
     /** Add a new empty rule at the top */
     addRule: () => void;
-    /** Remove a rule by ID */
+    /** Remove a rule by ID (stores it for undo) */
     removeRule: (id: string) => void;
     /** Update a single field of a rule */
     updateRule: (id: string, field: keyof BonusRuleState, value: any) => void;
     /** Toggle a payment method on/off for a rule */
     toggleRulePaymentMethod: (ruleId: string, method: string) => void;
+    /** The last deleted rule (for undo functionality) */
+    lastDeletedRule: BonusRuleState | null;
+    /** Undo the last delete operation */
+    undoLastDelete: () => void;
+    /** Clear the deleted rule (e.g., after timeout) */
+    clearDeletedRule: () => void;
 }
 
 /**
@@ -49,6 +55,9 @@ export function useBonusRules(options: UseBonusRulesOptions = {}): UseBonusRules
         initialRules ? createBonusRuleStatesFromRules(initialRules) : []
     );
 
+    // Track the last deleted rule for undo functionality
+    const [lastDeletedRule, setLastDeletedRule] = useState<BonusRuleState | null>(null);
+
     // Reinitialize when sync dependencies change (e.g., when initialCard changes)
     useEffect(() => {
         if (initialRules) {
@@ -62,9 +71,28 @@ export function useBonusRules(options: UseBonusRulesOptions = {}): UseBonusRules
         setBonusRules(prev => [createEmptyBonusRuleState(), ...prev]);
     }, []);
 
-    // Remove a rule by ID
+    // Remove a rule by ID and store it for potential undo
     const removeRule = useCallback((id: string) => {
-        setBonusRules(prev => prev.filter(r => r.id !== id));
+        setBonusRules(prev => {
+            const ruleToDelete = prev.find(r => r.id === id);
+            if (ruleToDelete) {
+                setLastDeletedRule(ruleToDelete);
+            }
+            return prev.filter(r => r.id !== id);
+        });
+    }, []);
+
+    // Undo the last delete operation
+    const undoLastDelete = useCallback(() => {
+        if (lastDeletedRule) {
+            setBonusRules(prev => [lastDeletedRule, ...prev]);
+            setLastDeletedRule(null);
+        }
+    }, [lastDeletedRule]);
+
+    // Clear the deleted rule (e.g., after timeout or manual dismiss)
+    const clearDeletedRule = useCallback(() => {
+        setLastDeletedRule(null);
     }, []);
 
     // Update a single field of a rule
@@ -95,5 +123,8 @@ export function useBonusRules(options: UseBonusRulesOptions = {}): UseBonusRules
         removeRule,
         updateRule,
         toggleRulePaymentMethod,
+        lastDeletedRule,
+        undoLastDelete,
+        clearDeletedRule,
     };
 }

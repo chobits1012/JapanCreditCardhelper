@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard } from '../../types';
-import { ChevronLeft, Sparkles, Loader2, Plus, Bookmark, X } from 'lucide-react';
+import { ChevronLeft, Sparkles, Loader2, Plus, Bookmark, X, Undo2 } from 'lucide-react';
 import { BONUS_PRESETS, createBonusRuleStateFromPreset } from '../../data/bonusPresets';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
@@ -38,10 +38,23 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         removeRule,
         updateRule,
         toggleRulePaymentMethod,
+        lastDeletedRule,
+        undoLastDelete,
+        clearDeletedRule,
     } = useBonusRules({
         initialRules: activeProgram?.bonusRules,
         syncDeps: [initialCard?.id, activeProgram?.bonusRules.length],
     });
+
+    // Auto-dismiss undo toast after 5 seconds
+    useEffect(() => {
+        if (lastDeletedRule) {
+            const timer = setTimeout(() => {
+                clearDeletedRule();
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [lastDeletedRule, clearDeletedRule]);
 
     // Card Form State
     const [name, setName] = useState(initialCard?.name || '');
@@ -493,6 +506,32 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                 選擇後會在加碼活動列表最上方新增一筆預設規則
                             </p>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Undo Delete Toast */}
+            {lastDeletedRule && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+                    <div className="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3">
+                        <span className="text-sm">
+                            已刪除「{lastDeletedRule.name}」
+                        </span>
+                        <button
+                            type="button"
+                            onClick={undoLastDelete}
+                            className="flex items-center gap-1 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            <Undo2 className="w-4 h-4" />
+                            復原
+                        </button>
+                        <button
+                            type="button"
+                            onClick={clearDeletedRule}
+                            className="text-white/60 hover:text-white/90 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
             )}
