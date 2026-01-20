@@ -94,7 +94,7 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
                     name: 'Apple Pay 感應支付加碼',
                     rate: 0.015, // +1.5%
                     categories: ['general_japan', 'drugstore', 'electronics', 'department', 'convenience', 'dining'],
-                    paymentMethods: ['Apple Pay', 'QUICPay'],
+                    paymentMethods: ['Apple Pay'],
                     region: 'japan',
                     capAmount: 600,
                     capPeriod: 'monthly',
@@ -109,7 +109,7 @@ export const CARD_TEMPLATES: Partial<CreditCard>[] = [
                     name: 'Apple Pay 滿額再加碼',
                     rate: 0.01, // +1%
                     categories: ['general_japan'],
-                    paymentMethods: ['Apple Pay', 'QUICPay'],
+                    paymentMethods: ['Apple Pay'],
                     region: 'japan',
                     capAmount: 200,
                     capPeriod: 'monthly',
