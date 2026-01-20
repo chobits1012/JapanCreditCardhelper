@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard } from '../../types';
-import { ChevronLeft, Sparkles, Loader2, Plus } from 'lucide-react';
+import { ChevronLeft, Sparkles, Loader2, Plus, Bookmark, X } from 'lucide-react';
+import { BONUS_PRESETS, createBonusRuleStateFromPreset } from '../../data/bonusPresets';
 import { format, addYears } from 'date-fns';
 import { MockBankService } from '../../services/bankData';
 import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
@@ -65,6 +66,18 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     // Delete Confirmation State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Preset Picker State
+    const [showPresetPicker, setShowPresetPicker] = useState(false);
+
+    const handleApplyPreset = (presetId: string) => {
+        const preset = BONUS_PRESETS.find(p => p.id === presetId);
+        if (preset) {
+            const newRule = createBonusRuleStateFromPreset(preset);
+            setBonusRules(prev => [newRule, ...prev]);
+            setShowPresetPicker(false);
+        }
+    };
 
     const handleAutoFill = async () => {
         if (!bank && !name) {
@@ -356,14 +369,24 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">特別加碼活動</label>
-                        <button
-                            type="button"
-                            onClick={addRule}
-                            className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-bold px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 transition-all active:scale-95"
-                        >
-                            <Plus className="w-3 h-3" />
-                            新增活動
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowPresetPicker(true)}
+                                className="text-xs flex items-center gap-1 text-amber-600 hover:text-amber-800 font-bold px-2 py-1 bg-amber-50 rounded-lg border border-amber-200 transition-all active:scale-95"
+                            >
+                                <Bookmark className="w-3 h-3" />
+                                帶入預設
+                            </button>
+                            <button
+                                type="button"
+                                onClick={addRule}
+                                className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-bold px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 transition-all active:scale-95"
+                            >
+                                <Plus className="w-3 h-3" />
+                                新增活動
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -420,6 +443,59 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+
+            {/* Preset Picker Modal */}
+            {showPresetPicker && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800">選擇加碼優惠預設</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowPresetPicker(false)}
+                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                            {BONUS_PRESETS.length === 0 ? (
+                                <p className="text-center text-gray-400 py-8">尚無預設可選擇</p>
+                            ) : (
+                                BONUS_PRESETS.map(preset => (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        onClick={() => handleApplyPreset(preset.id)}
+                                        className="w-full text-left p-4 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all active:scale-98 group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white shadow-sm">
+                                                <Bookmark className="w-5 h-5" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-800 group-hover:text-amber-700 transition-colors">
+                                                    {preset.name}
+                                                </p>
+                                                {preset.description && (
+                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                        {preset.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                        <div className="p-4 bg-gray-50 border-t border-gray-100">
+                            <p className="text-xs text-gray-400 text-center">
+                                選擇後會在加碼活動列表最上方新增一筆預設規則
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
