@@ -29,8 +29,8 @@ interface AppState {
 export const useStore = create<AppState>()(
     persist(
         (set, get) => ({
-            cards: MOCK_CARDS,
-            activeCardIds: MOCK_CARDS.map(c => c.id), // Default all active
+            cards: [], // Start with empty wallet
+            activeCardIds: [], // No active cards by default
             transactions: [],
             mode: 'travel', // Default to Travel Mode (Japan)
             hasCompletedOnboarding: false, // Default: show onboarding to new users
@@ -135,7 +135,7 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'credit-card-helper-storage',
-            version: 4,
+            version: 5, // Bump for fresh start
             migrate: (persistedState: any, version) => {
                 let state = persistedState;
 

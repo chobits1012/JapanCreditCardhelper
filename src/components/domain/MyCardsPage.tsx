@@ -161,6 +161,25 @@ export default function MyCardsPage() {
                     ${viewMode === 'stack' ? 'flex flex-col' : ''}
                 `}
                 >
+                    {/* Empty State */}
+                    {cards.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="col-span-2 flex flex-col items-center justify-center py-16 px-6"
+                        >
+                            <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                                <Layers2 className="w-10 h-10 text-slate-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-700 mb-2">
+                                尚未新增任何卡片
+                            </h3>
+                            <p className="text-sm text-slate-500 text-center max-w-[240px] leading-relaxed">
+                                點擊上方 <span className="inline-flex items-center px-2 py-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full mx-1">預設卡片</span> 快速新增熱門日本旅遊卡，或按 <span className="inline-flex items-center justify-center w-5 h-5 bg-slate-900 text-white rounded-full mx-1"><Plus className="w-3 h-3" /></span> 手動新增
+                            </p>
+                        </motion.div>
+                    )}
+
                     <AnimatePresence mode="popLayout">
                         {cards.map((card, index) => {
                             const isActive = activeCardIds.includes(card.id);
