@@ -459,8 +459,12 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
             {/* Preset Picker Modal */}
             {showPresetPicker && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-safe">
+                    <div
+                        className="absolute inset-0"
+                        onClick={() => setShowPresetPicker(false)}
+                    />
+                    <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-200 relative z-10">
                         <div className="flex items-center justify-between p-4 border-b border-gray-100">
                             <h3 className="text-lg font-bold text-gray-800">選擇加碼優惠預設</h3>
                             <button
@@ -471,7 +475,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+                        <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
                             {BONUS_PRESETS.length === 0 ? (
                                 <p className="text-center text-gray-400 py-8">尚無預設可選擇</p>
                             ) : (
@@ -483,15 +487,15 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                         className="w-full text-left p-4 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all active:scale-98 group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white shadow-sm">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
                                                 <Bookmark className="w-5 h-5" />
                                             </div>
-                                            <div className="flex-1">
+                                            <div className="flex-1 min-w-0">
                                                 <p className="font-bold text-gray-800 group-hover:text-amber-700 transition-colors">
                                                     {preset.name}
                                                 </p>
                                                 {preset.description && (
-                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                    <p className="text-xs text-gray-500 mt-0.5 truncate">
                                                         {preset.description}
                                                     </p>
                                                 )}
@@ -501,9 +505,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                 ))
                             )}
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-100">
+                        <div className="p-3 bg-gray-50 border-t border-gray-100">
                             <p className="text-xs text-gray-400 text-center">
-                                選擇後會在加碼活動列表最上方新增一筆預設規則
+                                選擇後會新增至加碼活動列表最上方
                             </p>
                         </div>
                     </div>
