@@ -1,17 +1,44 @@
 import { useState } from 'react';
-import { Plus, Trash2, LayoutList, LayoutGrid, Layers } from 'lucide-react';
+import { Plus, Trash2, LayoutList, LayoutGrid, Layers, Layers2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import CardDataForm from './CardDataForm';
 import CardDetailView from './CardDetailView';
 import ConfirmModal from '../ui/ConfirmModal';
 import CreditCardListItem, { CardLogo } from './CreditCardListItem';
 import CardGridItem from './CardGridItem';
+import CardPresetPicker from './CardPresetPicker';
 import { getCardStyle, getDisplayRate } from './cardHelpers';
 import type { CreditCard } from '../../types';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 export default function MyCardsPage() {
-    const { cards, activeCardIds, toggleCard, removeCard } = useStore();
+    const { cards, activeCardIds, toggleCard, removeCard, addCard } = useStore();
+
+    // Preset Picker State
+    const [showPresetPicker, setShowPresetPicker] = useState(false);
+
+    // Handler for adding card from preset
+    const handleAddFromPreset = (cardTemplate: Partial<CreditCard>) => {
+        const newCard: CreditCard = {
+            id: crypto.randomUUID(),
+            name: cardTemplate.name || '新卡片',
+            bank: cardTemplate.bank || '',
+            colorTheme: cardTemplate.colorTheme,
+            foreignTxFee: cardTemplate.foreignTxFee,
+            supportedPaymentMethods: cardTemplate.supportedPaymentMethods || [],
+            programs: cardTemplate.programs?.map(prog => ({
+                ...prog,
+                id: crypto.randomUUID(),
+                cardId: crypto.randomUUID(),
+                bonusRules: prog.bonusRules?.map(rule => ({
+                    ...rule,
+                    id: crypto.randomUUID(),
+                })) || [],
+            })) || [],
+        };
+        addCard(newCard);
+        setShowPresetPicker(false);
+    };
 
     // View States
     const [viewMode, setViewMode] = useState<'list' | 'grid' | 'stack'>('list');
@@ -103,6 +130,17 @@ export default function MyCardsPage() {
                             </button>
                         </div>
 
+                        {/* Preset Cards Button */}
+                        <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setShowPresetPicker(true)}
+                            className="flex items-center justify-center gap-1.5 px-3 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg shadow-indigo-200"
+                        >
+                            <Layers2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">預設卡片</span>
+                        </motion.button>
+
+                        {/* Add Card Button */}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setIsAdding(true)}
@@ -351,6 +389,13 @@ export default function MyCardsPage() {
                         }
                     }}
                     onCancel={() => setCardToDelete(null)}
+                />
+
+                {/* Card Preset Picker Modal */}
+                <CardPresetPicker
+                    isOpen={showPresetPicker}
+                    onClose={() => setShowPresetPicker(false)}
+                    onSelectCard={handleAddFromPreset}
                 />
             </div >
         </LayoutGroup >
