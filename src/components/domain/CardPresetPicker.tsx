@@ -55,7 +55,7 @@ export default function CardPresetPicker({ isOpen, onClose, onSelectCard }: Card
             />
 
             {/* Modal Content */}
-            <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 fade-in duration-300 relative z-10 max-h-[85vh] flex flex-col">
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 fade-in duration-300 relative z-10 max-h-[70vh] flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 shrink-0">
                     <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export default function CardPresetPicker({ isOpen, onClose, onSelectCard }: Card
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 bg-gray-50 border-t border-gray-100 shrink-0 pb-safe">
+                <div className="p-4 pb-6 bg-gray-50 border-t border-gray-100 shrink-0">
                     <p className="text-xs text-gray-400 text-center">
                         選擇後將自動新增至您的錢包
                     </p>
