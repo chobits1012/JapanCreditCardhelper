@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import type { CreditCard } from '../../types';
+import type { CreditCard, BillingCycleType } from '../../types';
 import { ChevronLeft, Sparkles, Loader2, Plus, Bookmark, X, Undo2 } from 'lucide-react';
 import { BONUS_PRESETS, createBonusRuleStateFromPreset } from '../../data/bonusPresets';
 import { format, addYears } from 'date-fns';
@@ -64,6 +64,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         initialCard?.colorTheme || (initialCard ? getThemeByKeyword(initialCard.bank, initialCard.name) : 'matte_black')
     );
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
+    const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>(initialCard?.billingCycleType || 'calendar');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
 
     // Split Base Rates
@@ -162,6 +163,7 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             name,
             bank,
             statementDate: parseInt(statementDate) || 27,
+            billingCycleType,
             foreignTxFee: parseFloat(foreignTxFee) || 1.5,
             supportedPaymentMethods, // Ensure card level still has these
             colorTheme, // Save selected theme
@@ -325,18 +327,45 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                             />
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">結帳日 (每月幾號)</label>
-                        <input
-                            required
-                            type="number"
-                            min="1"
-                            max="31"
-                            placeholder="例如: 27"
-                            value={statementDate}
-                            onChange={e => setStatementDate(e.target.value)}
-                            className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">結帳日 (每月幾號)</label>
+                            <input
+                                required
+                                type="number"
+                                min="1"
+                                max="31"
+                                placeholder="例如: 27"
+                                value={statementDate}
+                                onChange={e => setStatementDate(e.target.value)}
+                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">回饋計算週期</label>
+                            <div className="flex rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycleType('calendar')}
+                                    className={`flex-1 py-2 text-xs font-medium transition-all ${billingCycleType === 'calendar'
+                                            ? 'bg-indigo-500 text-white'
+                                            : 'text-gray-500 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    自然月
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycleType('statement')}
+                                    className={`flex-1 py-2 text-xs font-medium transition-all ${billingCycleType === 'statement'
+                                            ? 'bg-indigo-500 text-white'
+                                            : 'text-gray-500 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    結帳月
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">海外手續費 (%)</label>

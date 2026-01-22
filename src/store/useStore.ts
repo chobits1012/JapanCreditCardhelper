@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CreditCard, Transaction } from '../types';
+import type { CreditCard, Transaction, BillingCycleType } from '../types';
 import { MOCK_CARDS } from '../data/mockData';
 import { CARD_TEMPLATES } from '../data/cardTemplates';
 
@@ -23,7 +23,7 @@ interface AppState {
     completeOnboarding: () => void;
 
     // Computed helpers
-    getRuleUsage: (ruleId: string, date: string, statementDate?: number) => number;
+    getRuleUsage: (ruleId: string, date: string, statementDate?: number, billingCycleType?: BillingCycleType) => number;
 }
 
 export const useStore = create<AppState>()(
@@ -74,7 +74,7 @@ export const useStore = create<AppState>()(
 
             completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
-            getRuleUsage: (ruleId: string, targetDateStr: string, statementDate: number = 31) => {
+            getRuleUsage: (ruleId: string, targetDateStr: string, statementDate: number = 31, billingCycleType: BillingCycleType = 'calendar') => {
                 const { transactions, cards } = get();
 
                 // 1. Find the Rule Definition to check its capPeriod
@@ -108,8 +108,12 @@ export const useStore = create<AppState>()(
                     // Campaign Period: Use Program Start/End Dates
                     start = new Date(programDef.startDate);
                     end = new Date(programDef.endDate);
+                } else if (billingCycleType === 'calendar') {
+                    // Calendar Month: 1st to end of month
+                    start = new Date(targetYear, targetMonth, 1);
+                    end = new Date(targetYear, targetMonth + 1, 0); // Last day of month
                 } else {
-                    // Default / Monthly: Billing Cycle Logic
+                    // Statement Billing Cycle Logic
                     if (targetDay > statementDate) {
                         // Current cycle started this month on (statementDate + 1)
                         start = new Date(targetYear, targetMonth, statementDate + 1);

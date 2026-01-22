@@ -60,12 +60,16 @@ export interface RewardProgram {
     note?: string; // 備註 (例如: "需登錄", "需綁定帳戶")
 }
 
+// 回饋計算週期類型
+export type BillingCycleType = 'calendar' | 'statement'; // calendar=自然月, statement=結帳日
+
 // 信用卡本體
 export interface CreditCard {
     id: string;
     name: string;       // 例如: "吉鶴卡"
     bank: string;       // 例如: "聯邦銀行"
     statementDate?: number; // 結帳日 (1-31)
+    billingCycleType?: BillingCycleType; // 回饋計算週期：自然月 or 結帳月 (default: calendar)
     foreignTxFee?: number; // 海外交易手續費 (%) default 1.5
     imageUrl?: string;  // 卡面圖片
     colorTheme?: string; // 卡片色系主題 ID (e.g., 'midnight_navy')

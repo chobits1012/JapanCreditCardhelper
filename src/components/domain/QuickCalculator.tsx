@@ -121,7 +121,7 @@ export default function QuickCalculator() {
             // We'll trust the calculator to apply the right ones, but we provide usage for ALL.
             if (program) {
                 program.bonusRules.forEach(rule => {
-                    const usage = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27);
+                    const usage = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27, card.billingCycleType);
                     usageMap[rule.id] = usage;
                 });
             }
@@ -397,7 +397,7 @@ export default function QuickCalculator() {
                                         <div className="space-y-1.5 pt-1">
                                             {res.breakdown.map((rule, i) => {
                                                 // Fetch active usage for this rule to show remaining cap
-                                                const usage = useStore.getState().getRuleUsage(rule.ruleId, date, card.statementDate || 27);
+                                                const usage = useStore.getState().getRuleUsage(rule.ruleId, date, card.statementDate || 27, card.billingCycleType);
                                                 const cap = rule.capLimit || 0;
                                                 const remaining = Math.max(0, cap - usage);
                                                 const isNearCap = cap > 0 && remaining < (Number(amount) * 0.1); // arbitrary warning threshold
