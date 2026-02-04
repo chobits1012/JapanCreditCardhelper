@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calculator, DollarSign, Store, Trophy, Plane, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { calculateReward, type CalculationResult } from '../../services/calculator';
+import { calculateReward, type CalculationResult, recalculateTransaction } from '../../services/calculator';
 import type { MerchantCategory } from '../../types';
 
 export default function QuickCalculator() {
@@ -141,24 +141,22 @@ export default function QuickCalculator() {
 
     const handleSave = (res: CalculationResult) => {
         const baseTx = createBaseTransaction();
+        const card = cards.find(c => c.id === res.cardId);
+        if (!card) return;
 
-        // Convert breakdown to usage map (using original currency for each rule)
-        const ruleUsageMap: Record<string, number> = {};
-        res.breakdown.forEach(item => {
-            // Use usageAmount (in rule's currency) if available, fallback to amount (TWD)
-            const usage = item.usageAmount ?? item.amount;
-            ruleUsageMap[item.ruleId] = (ruleUsageMap[item.ruleId] || 0) + usage;
-        });
+        // 1. Fetch current usage for this card
+        const usageMap: Record<string, number> = {};
+        const program = card.programs[0];
+        if (program) {
+            program.bonusRules.forEach(rule => {
+                usageMap[rule.id] = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27, card.billingCycleType);
+            });
+        }
 
-        const transactionToSave = {
-            ...baseTx,
-            cardId: res.cardId,
-            calculatedRewardAmount: res.totalReward,
-            appliedRuleNames: res.breakdown.map(b => b.ruleName),
-            ruleUsageMap
-        };
+        // 2. Use service to get final transaction object
+        const finalTx = recalculateTransaction(card, baseTx, usageMap, mode);
 
-        addTransaction(transactionToSave);
+        addTransaction(finalTx);
         setSavedId(res.cardId);
         setTimeout(() => setSavedId(null), 3000);
     }

@@ -257,3 +257,32 @@ export function calculateReward(
 
     return result;
 }
+
+/**
+ * Recalculate a transaction based on current card rules
+ */
+export function recalculateTransaction(
+    card: CreditCard,
+    transaction: Omit<Transaction, 'calculatedRewardAmount' | 'appliedRuleNames' | 'ruleUsageMap'>,
+    usageMap: Record<string, number> = {},
+    mode: 'travel' | 'daily' = 'travel'
+): Transaction {
+    const result = calculateReward(card, transaction as Transaction, usageMap, mode);
+
+    // Filter breakdown to get ruleUsageMap
+    const ruleUsageMap: Record<string, number> = {};
+    result.breakdown.forEach(item => {
+        if (item.ruleId !== 'base') {
+            const usage = item.usageAmount ?? item.amount;
+            ruleUsageMap[item.ruleId] = (ruleUsageMap[item.ruleId] || 0) + usage;
+        }
+    });
+
+    return {
+        ...transaction,
+        cardId: card.id,
+        calculatedRewardAmount: result.totalReward,
+        appliedRuleNames: result.breakdown.map(b => b.ruleName),
+        ruleUsageMap
+    } as Transaction;
+}

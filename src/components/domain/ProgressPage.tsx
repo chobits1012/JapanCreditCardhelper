@@ -1,20 +1,40 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowUpDown, ChevronDown, Calendar, Store, DollarSign } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { format } from 'date-fns';
 import ConfirmModal from '../ui/ConfirmModal';
+import TransactionDetailModal from './TransactionDetailModal';
+import type { Transaction } from '../../types';
 
 export default function ProgressPage() {
     const { cards, activeCardIds, transactions, getRuleUsage, removeTransaction, resetTransactions, mode } = useStore();
     const activeCards = cards.filter(c => activeCardIds.includes(c.id));
+
+    // Sorting State
+    const [sortBy, setSortBy] = useState<'date' | 'amount' | 'merchant'>('date');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [isSortOpen, setIsSortOpen] = useState(false);
+
+    // Selected Transaction for Detail Modal
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
     // Filter transactions based on mode (Travel = JPY only, Daily = TWD only)
     const filteredTransactions = transactions.filter(tx => {
         return mode === 'travel' ? tx.currency === 'JPY' : tx.currency === 'TWD';
     });
 
-    // Sort transactions by date desc
-    const sortedTransactions = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Sort transactions
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'date') {
+            comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+        } else if (sortBy === 'amount') {
+            comparison = b.amount - a.amount;
+        } else if (sortBy === 'merchant') {
+            comparison = (a.merchantName || '').localeCompare(b.merchantName || '');
+        }
+        return sortOrder === 'desc' ? comparison : -comparison;
+    });
 
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
@@ -44,6 +64,16 @@ export default function ProgressPage() {
         });
     };
 
+    const toggleSort = (newSort: 'date' | 'amount' | 'merchant') => {
+        if (sortBy === newSort) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(newSort);
+            setSortOrder('desc');
+        }
+        setIsSortOpen(false);
+    };
+
     return (
         <div className="max-w-md mx-auto p-4 space-y-8 pb-20">
             <header className="flex items-center space-x-2 mb-2">
@@ -58,6 +88,14 @@ export default function ProgressPage() {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
             />
+
+            {selectedTx && (
+                <TransactionDetailModal
+                    isOpen={!!selectedTx}
+                    transaction={selectedTx}
+                    onClose={() => setSelectedTx(null)}
+                />
+            )}
 
             {/* Progress Section */}
             {activeCards.length === 0 ? (
@@ -168,7 +206,40 @@ export default function ProgressPage() {
             {/* Transaction History Section */}
             <div className="pt-4 border-t border-gray-100">
                 <header className="flex justify-between items-end mb-4">
-                    <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
+
+                        {/* Sort Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsSortOpen(!isSortOpen)}
+                                className="flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-[10px] font-bold text-stone-600 transition-colors"
+                            >
+                                <ArrowUpDown className="w-3 h-3" />
+                                {sortBy === 'date' ? '日期' : sortBy === 'amount' ? '金額' : '商家'}
+                                {sortOrder === 'asc' ? '↑' : '↓'}
+                                <ChevronDown className={`w-3 h-3 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isSortOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)}></div>
+                                    <div className="absolute left-0 mt-1 w-24 bg-white rounded-xl shadow-xl border border-stone-100 z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <button onClick={() => toggleSort('date')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'date' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                            <Calendar className="w-3.5 h-3.5" /> 日期
+                                        </button>
+                                        <button onClick={() => toggleSort('amount')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'amount' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                            <DollarSign className="w-3.5 h-3.5" /> 金額
+                                        </button>
+                                        <button onClick={() => toggleSort('merchant')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'merchant' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                            <Store className="w-3.5 h-3.5" /> 商家
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
                     {sortedTransactions.length > 0 && (
                         <button
                             onClick={() => openModal(
@@ -189,51 +260,58 @@ export default function ProgressPage() {
                         尚未有紀錄
                     </div>
                 ) : (
-                    <div className="space-y-0 px-2 pb-4">
+                    <div className="space-y-3 px-1 pb-4">
                         {sortedTransactions.map(tx => {
                             const card = cards.find(c => c.id === tx.cardId);
 
                             // Receipt Style (Standalone but connected)
-                            const receiptStyle = "bg-[#FFFBF5] p-3 flex justify-between items-center group border border-stone-200 border-dashed rounded-xl shadow-sm hover:bg-[#FFF9F0] hover:z-10 hover:shadow-md hover:scale-[1.005] transition-all duration-300 relative";
+                            const receiptStyle = "bg-[#FFFBF5] p-3.5 flex justify-between items-center group border border-stone-200 border-dashed rounded-2xl shadow-sm hover:bg-[#FFF9F0] hover:border-indigo-200 hover:shadow-md transition-all duration-300 relative cursor-pointer active:scale-[0.98]";
 
                             return (
-                                <div key={tx.id} className={receiptStyle}>
+                                <div
+                                    key={tx.id}
+                                    className={receiptStyle}
+                                    onClick={() => setSelectedTx(tx)}
+                                >
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs font-bold text-stone-500 font-mono tracking-tighter">
+                                            <span className="text-[10px] font-bold text-stone-400 font-mono tracking-tighter bg-stone-100 px-1.5 py-0.5 rounded">
                                                 {format(new Date(tx.date), 'MM/dd')}
                                             </span>
-                                            <span className="font-medium text-stone-800 font-serif">
+                                            <span className="font-bold text-stone-800 font-serif">
                                                 {tx.merchantName || '未知名稱'}
                                             </span>
                                         </div>
-                                        <div className="flex justify-start items-center mt-1">
+                                        <div className="flex justify-start items-center mt-1.5">
                                             {/* Fixed Width Container for Alignment */}
-                                            <div className="w-32 flex items-center text-[10px] text-stone-500 tracking-wider truncate mr-1">
+                                            <div className="flex items-center text-[10px] text-stone-500 tracking-wider font-medium truncate mr-1 bg-stone-50 px-2 py-0.5 rounded-full border border-stone-100">
                                                 <span className="flex-shrink-0">{card?.bank}</span>
                                                 <span className="text-stone-300 mx-1 flex-shrink-0">|</span>
                                                 <span className="truncate">{card?.name}</span>
                                             </div>
-                                            <span className="text-xs font-mono text-stone-600 bg-stone-100 px-1.5 rounded flex-shrink-0">
-                                                {tx.currency} {tx.amount.toLocaleString()}
+                                            <span className="text-[10px] font-bold font-mono text-stone-600 ml-1">
+                                                {tx.currency === 'JPY' ? '¥' : '$'} {tx.amount.toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-3">
+                                    <div className="flex items-center space-x-4">
                                         <div className="text-right">
-                                            <div className="text-sm font-bold text-stone-800 font-mono">
+                                            <div className="text-base font-black text-indigo-600 font-mono">
                                                 +{tx.calculatedRewardAmount}
                                             </div>
-                                            <div className="text-[10px] text-gray-400">回饋</div>
+                                            <div className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rewards</div>
                                         </div>
                                         <button
-                                            onClick={() => openModal(
-                                                '刪除紀錄',
-                                                '確定要刪除這筆交易紀錄嗎？\n刪除後進度將會扣除，但無法復原。',
-                                                () => removeTransaction(tx.id),
-                                                true
-                                            )}
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-60 group-hover:opacity-100"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal(
+                                                    '刪除紀錄',
+                                                    '確定要刪除這筆交易紀錄嗎？\n刪除後進度將會扣除，但無法復原。',
+                                                    () => removeTransaction(tx.id),
+                                                    true
+                                                );
+                                            }}
+                                            className="p-2.5 text-stone-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all group-hover:opacity-100 opacity-40"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

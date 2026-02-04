@@ -20,6 +20,7 @@ interface AppState {
     toggleCard: (cardId: string) => void;
     removeTransaction: (transactionId: string) => void;
     resetTransactions: () => void;
+    updateTransaction: (transaction: Transaction) => void;
     completeOnboarding: () => void;
 
     // Computed helpers
@@ -71,6 +72,10 @@ export const useStore = create<AppState>()(
             })),
 
             resetTransactions: () => set({ transactions: [] }),
+
+            updateTransaction: (updatedTx) => set((state) => ({
+                transactions: state.transactions.map(t => t.id === updatedTx.id ? updatedTx : t)
+            })),
 
             completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
