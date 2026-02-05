@@ -39,7 +39,7 @@ export const BONUS_PRESETS: BonusPreset[] = [
     {
         id: 'jcb-spring-2026',
         name: 'JCB 春季加碼',
-        description: '2026/02/02-04/30 回饋10%，上限¥10,000',
+        description: '2026/02/02-04/30 累積滿¥100,000享10%回饋',
         ruleData: {
             name: 'JCB 春季加碼',
             rate: '10',                         // 10% 回饋
@@ -48,8 +48,9 @@ export const BONUS_PRESETS: BonusPreset[] = [
             capAmount: '10000',                 // 回饋上限 10000 JPY
             capAmountCurrency: 'JPY',
             capPeriod: 'campaign',              // 期間是「總」（活動期間總上限）
-            minAmount: '100000',                // 單筆門檻 100000 JPY
+            minAmount: '100000',                // 累積門檻 100000 JPY
             minAmountCurrency: 'JPY',
+            minAmountType: 'cumulative',        // 累積型門檻（非單筆）
             checkJapan: true,                   // 包含所有日本通路
             requiresRegistration: true,         // 此活動需要登錄
             region: 'japan',
@@ -82,6 +83,7 @@ export function createBonusRuleStateFromPreset(preset: BonusPreset): BonusRuleSt
         paymentMethods: [],
         minAmount: '',
         minAmountCurrency: 'TWD',
+        minAmountType: 'per_transaction',
         startDate: '',
         endDate: '',
         createdAt: Date.now(),

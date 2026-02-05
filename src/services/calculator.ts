@@ -1,5 +1,6 @@
 import { isWithinInterval, parseISO } from 'date-fns';
 import type { CreditCard, RewardProgram, Transaction } from '../types';
+import { useStore } from '../store/useStore';
 
 export interface CalculationResult {
     cardId: string;
@@ -31,6 +32,41 @@ export function getActiveProgram(card: CreditCard, date: string): RewardProgram 
             end: parseISO(p.endDate)
         })
     );
+}
+
+/**
+ * Calculate cumulative spending for a specific rule within its active period (excluding current transaction)
+ * Used for cumulative threshold rules (e.g., "spend 100k JPY total to trigger bonus")
+ * 
+ * @param currentTxId - Current transaction ID to exclude from calculation
+ * @param startDate - Start of the calculation period
+ * @param endDate - End of the calculation period
+ * @param currency - Currency to sum in ('TWD' or 'JPY')
+ * @returns Total spending in the specified currency
+ */
+export function calculateCumulativeSpending(
+    currentTxId: string,
+    startDate: string,
+    endDate: string,
+    currency: 'TWD' | 'JPY'
+): number {
+    const { transactions } = useStore.getState();
+    const startDateObj = parseISO(startDate);
+    const endDateObj = parseISO(endDate);
+
+    return transactions
+        .filter(tx => tx.id !== currentTxId) // Exclude current transaction
+        .filter(tx => {
+            const txDate = parseISO(tx.date);
+            return isWithinInterval(txDate, { start: startDateObj, end: endDateObj });
+        })
+        .reduce((sum, tx) => {
+            // Convert to target currency for summation
+            const amount = currency === 'JPY'
+                ? (tx.currency === 'JPY' ? tx.amount : Math.floor(tx.amount / tx.exchangeRate))
+                : (tx.currency === 'TWD' ? tx.amount : Math.floor(tx.amount * tx.exchangeRate));
+            return sum + amount;
+        }, 0);
 }
 
 /**
@@ -153,19 +189,41 @@ export function calculateReward(
             ? true
             : rule.paymentMethods.includes(transaction.paymentMethod);
 
-        // CHECK 4: Minimum Amount Match (Currency-Aware)
+        // CHECK 4: Minimum Amount Match (Currency-Aware & Cumulative Support)
         // Compare transaction amount with rule's minimum threshold
         // - If minAmountCurrency is 'JPY': Convert TWD back to JPY for comparison
         // - If minAmountCurrency is 'TWD' or undefined: Direct TWD comparison (default)
+        // - If minAmountType is 'cumulative': Check total spending across period
         let isAmountMatch = true;
         if (rule.minAmount) {
-            if (rule.minAmountCurrency === 'JPY') {
-                // Convert transaction amount back to JPY for comparison
-                const amountJPY = Math.floor(transaction.amount);
-                isAmountMatch = amountJPY >= rule.minAmount;
+            const thresholdType = rule.minAmountType || 'per_transaction';
+            const thresholdCurrency = rule.minAmountCurrency || 'TWD';
+
+            if (thresholdType === 'per_transaction') {
+                // Original logic: Single transaction threshold
+                if (thresholdCurrency === 'JPY') {
+                    const amountJPY = Math.floor(transaction.amount);
+                    isAmountMatch = amountJPY >= rule.minAmount;
+                } else {
+                    isAmountMatch = amountTWD >= rule.minAmount;
+                }
             } else {
-                // Default: TWD comparison
-                isAmountMatch = amountTWD >= rule.minAmount;
+                // New logic: Cumulative threshold
+                // Calculate accumulated spending (excluding this transaction)
+                const accumulated = calculateCumulativeSpending(
+                    transaction.id,
+                    program.startDate,
+                    program.endDate,
+                    thresholdCurrency
+                );
+
+                // Get current transaction amount in threshold currency
+                const currentAmount = thresholdCurrency === 'JPY'
+                    ? Math.floor(transaction.amount)
+                    : amountTWD;
+
+                // Trigger bonus only if accumulated + current >= threshold
+                isAmountMatch = (accumulated + currentAmount) >= rule.minAmount;
             }
         }
 

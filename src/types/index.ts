@@ -32,6 +32,7 @@ export interface BonusRule {
 
     minAmount?: number;             // 最低消費門檻
     minAmountCurrency?: 'TWD' | 'JPY'; // 門檻幣別（預設 TWD）
+    minAmountType?: 'per_transaction' | 'cumulative'; // 門檻類型：單筆 或 累積（預設 per_transaction）
 
     requiresRegistration?: boolean; // 是否需要登錄 (New)
     note?: string;                  // 備註 (New)

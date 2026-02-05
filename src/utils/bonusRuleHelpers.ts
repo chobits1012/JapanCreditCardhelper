@@ -25,6 +25,7 @@ export interface BonusRuleState {
     paymentMethods: string[];               // Selected payment methods
     minAmount: string;                      // String for form input
     minAmountCurrency: 'TWD' | 'JPY';
+    minAmountType: 'per_transaction' | 'cumulative'; // Threshold type
     startDate: string;                      // Individual rule start date (ISO)
     endDate: string;                        // Individual rule end date (ISO)
     createdAt: number;                      // Timestamp for display ordering (UI only)
@@ -52,6 +53,7 @@ export function createBonusRuleStateFromRule(rule: BonusRule, displayIndex: numb
         paymentMethods: rule.paymentMethods || [],
         minAmount: rule.minAmount ? rule.minAmount.toString() : '',
         minAmountCurrency: rule.minAmountCurrency || 'TWD',
+        minAmountType: rule.minAmountType || 'per_transaction',
         startDate: rule.startDate || '',
         endDate: rule.endDate || '',
         createdAt: displayIndex,
@@ -79,6 +81,7 @@ export function createEmptyBonusRuleState(): BonusRuleState {
         paymentMethods: [],
         minAmount: '',
         minAmountCurrency: 'TWD',
+        minAmountType: 'per_transaction',
         startDate: '',
         endDate: '',
         createdAt: Date.now(),
@@ -110,6 +113,7 @@ export function convertToDomainBonusRule(ruleState: BonusRuleState): BonusRule {
         paymentMethods: ruleState.paymentMethods.length > 0 ? ruleState.paymentMethods : undefined,
         minAmount: ruleState.minAmount ? parseInt(ruleState.minAmount) : undefined,
         minAmountCurrency: ruleState.minAmount ? ruleState.minAmountCurrency : undefined,
+        minAmountType: ruleState.minAmount ? ruleState.minAmountType : undefined,
         startDate: ruleState.startDate || undefined,
         endDate: ruleState.endDate || undefined,
     };

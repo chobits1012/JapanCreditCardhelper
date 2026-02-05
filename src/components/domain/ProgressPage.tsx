@@ -18,10 +18,9 @@ export default function ProgressPage() {
     // Selected Transaction for Detail Modal
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
-    // Filter transactions based on mode (Travel = JPY only, Daily = TWD only)
-    const filteredTransactions = transactions.filter(tx => {
-        return mode === 'travel' ? tx.currency === 'JPY' : tx.currency === 'TWD';
-    });
+    // Show all transactions regardless of mode
+    // This allows users to see TWD purchases (e.g., Klook) during travel mode
+    const filteredTransactions = transactions;
 
     // Sort transactions
     const sortedTransactions = [...filteredTransactions].sort((a, b) => {

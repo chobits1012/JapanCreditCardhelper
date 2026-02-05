@@ -177,10 +177,10 @@ export default function BonusRuleEditor({
                     </div>
                 </div>
 
-                {/* Minimum Transaction Amount */}
+                {/* Minimum Transaction Amount with Type Selector */}
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">單筆消費門檻 (選填)</label>
-                    <div className="flex items-center gap-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">消費門檻 (選填)</label>
+                    <div className="flex items-center gap-2 mb-2">
                         <input
                             type="number"
                             placeholder="無門檻"
@@ -197,8 +197,38 @@ export default function BonusRuleEditor({
                             <option value="JPY">JPY</option>
                         </select>
                     </div>
+
+                    {/* Threshold Type Selector */}
+                    {rule.minAmount && (
+                        <div className="bg-blue-50 p-2 rounded-lg border border-blue-200 mt-2">
+                            <div className="flex gap-2">
+                                {[
+                                    { id: 'per_transaction', label: '單筆門檻', description: '每筆交易需達此金額' },
+                                    { id: 'cumulative', label: '累積門檻', description: '活動期間累計達標後開始回饋' }
+                                ].map((opt) => (
+                                    <label key={opt.id} className="flex-1 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name={`minAmountType-${rule.id}`}
+                                            value={opt.id}
+                                            checked={rule.minAmountType === opt.id}
+                                            onChange={(e) => onUpdate('minAmountType', e.target.value)}
+                                            className="peer sr-only"
+                                        />
+                                        <div className="text-center py-2 px-2 rounded-md text-[11px] font-medium text-gray-600 bg-white border border-blue-200 transition-all peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 peer-checked:shadow-sm">
+                                            <div className="font-bold">{opt.label}</div>
+                                            <div className="text-[9px] opacity-80 mt-0.5">{opt.description}</div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
-                        💡 單筆消費需達此金額才享有此回饋（系統會自動處理幣別轉換）
+                        💡 {rule.minAmountType === 'cumulative'
+                            ? '累積型門檻：整個活動期間總消費達標後，後續交易才享有回饋'
+                            : '單筆門檻：每筆消費需達此金額才享有回饋'}
                     </p>
                 </div>
 
