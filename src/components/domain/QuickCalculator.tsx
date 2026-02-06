@@ -9,7 +9,7 @@ export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction, mode, toggleMode } = useStore();
 
     // Form State
-    const [amount, setAmount] = useState<number | ''>(10000);
+    const [amount, setAmount] = useState<number | ''>('');
     const [currency, setCurrency] = useState<'JPY' | 'TWD'>('JPY');
     const [exchangeRate, setExchangeRate] = useState<number | ''>(0.22);
     const [isRateLoading, setIsRateLoading] = useState<boolean>(false);
