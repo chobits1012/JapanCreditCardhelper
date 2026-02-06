@@ -229,7 +229,45 @@ export function calculateReward(
 
         if (isCategoryMatch && isMerchantMatch && isPaymentMatch && isAmountMatch) {
             // Calculate potential bonus
-            let bonusAmount = Math.floor(amountTWD * rule.rate);
+            let bonusAmount;
+
+            // Different calculation for cumulative vs per-transaction bonuses
+            if (rule.minAmountType === 'cumulative') {
+                // Cumulative bonus: Calculate based on accumulated total
+                const thresholdCurrency = rule.minAmountCurrency || 'TWD';
+
+                // Get accumulated spending (excluding current transaction)
+                const accumulated = calculateCumulativeSpending(
+                    transaction.id,
+                    program.startDate,
+                    program.endDate,
+                    thresholdCurrency
+                );
+
+                // Get current transaction amount in threshold currency
+                const currentAmount = thresholdCurrency === 'JPY'
+                    ? Math.floor(transaction.amount)
+                    : amountTWD;
+
+                // Total accumulated spending (including current transaction)
+                const accumulatedTotal = accumulated + currentAmount;
+
+                // Convert accumulated total to TWD for reward calculation
+                const accumulatedTotalTWD = thresholdCurrency === 'JPY'
+                    ? Math.floor(accumulatedTotal * exchangeRate)
+                    : accumulatedTotal;
+
+                // Calculate total expected reward from accumulated spending
+                const totalExpectedReward = Math.floor(accumulatedTotalTWD * rule.rate);
+
+                // Subtract already-given rewards to get this transaction's bonus
+                const alreadyGiven = usageMap[rule.id] || 0;
+                bonusAmount = Math.max(0, totalExpectedReward - alreadyGiven);
+            } else {
+                // Per-transaction bonus: Use current transaction amount (original logic)
+                bonusAmount = Math.floor(amountTWD * rule.rate);
+            }
+
             let isCapped = false;
 
             // Check Cap (Currency-Aware)
