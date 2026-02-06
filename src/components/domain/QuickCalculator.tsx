@@ -404,6 +404,25 @@ export default function QuickCalculator() {
                                                 const program = card.programs[0];
                                                 const ruleDefinition = program?.bonusRules.find(r => r.id === rule.ruleId);
                                                 const minAmount = ruleDefinition?.minAmount;
+                                                const minAmountType = ruleDefinition?.minAmountType || 'per_transaction';
+                                                const minAmountCurrency = ruleDefinition?.minAmountCurrency || 'TWD';
+                                                const isCumulative = minAmountType === 'cumulative';
+
+                                                // Calculate cumulative spending if this is a cumulative rule
+                                                let cumulativeSpent = 0;
+                                                if (isCumulative && minAmount && program) {
+                                                    const { transactions } = useStore.getState();
+                                                    cumulativeSpent = transactions
+                                                        .filter(tx => tx.date >= program.startDate && tx.date <= program.endDate)
+                                                        .reduce((sum, tx) => {
+                                                            const txAmount = minAmountCurrency === 'JPY'
+                                                                ? (tx.currency === 'JPY' ? tx.amount : Math.floor(tx.amount / tx.exchangeRate))
+                                                                : (tx.currency === 'TWD' ? tx.amount : Math.floor(tx.amount * tx.exchangeRate));
+                                                            return sum + txAmount;
+                                                        }, 0);
+                                                }
+
+                                                const currencySymbol = minAmountCurrency === 'JPY' ? '¥' : '$';
 
                                                 return (
                                                     <div key={i} className="flex justify-between items-center text-[11px]">
@@ -411,6 +430,8 @@ export default function QuickCalculator() {
                                                             <span className="text-slate-600 truncate max-w-[150px]">
                                                                 {rule.ruleName} <span className="text-gray-400 font-medium ml-0.5">[{Number((rule.rate * 100).toFixed(1))}%]</span>
                                                             </span>
+
+                                                            {/* Cap remaining indicator */}
                                                             {cap > 0 && (
                                                                 <span className={`text-[9px] px-1.5 py-0 rounded ${isNearCap ? 'bg-red-100 text-red-600 font-bold' : 'bg-slate-100 text-slate-400'}`}>
                                                                     {rule.usageCurrency === 'JPY' ? (
@@ -420,10 +441,28 @@ export default function QuickCalculator() {
                                                                     )}
                                                                 </span>
                                                             )}
-                                                            {minAmount && (
-                                                                <span className="text-[9px] px-1.5 py-0 rounded bg-blue-50 text-blue-600 border border-blue-100">
-                                                                    ≥${minAmount.toLocaleString()}
-                                                                </span>
+
+                                                            {/* Cumulative status label or threshold indicator */}
+                                                            {isCumulative ? (
+                                                                // Cumulative rule: show status or progress
+                                                                rule.amount > 0 ? (
+                                                                    // Met threshold: show success label
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-bold border border-emerald-200">
+                                                                        ✓ 累積達標
+                                                                    </span>
+                                                                ) : minAmount ? (
+                                                                    // Unmet threshold: show progress
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">
+                                                                        ⚠ {currencySymbol}{cumulativeSpent.toLocaleString()}/{currencySymbol}{minAmount.toLocaleString()}
+                                                                    </span>
+                                                                ) : null
+                                                            ) : (
+                                                                // Per-transaction rule: show simple threshold
+                                                                minAmount && (
+                                                                    <span className="text-[9px] px-1.5 py-0 rounded bg-blue-50 text-blue-600 border border-blue-100">
+                                                                        ≥{currencySymbol}{minAmount.toLocaleString()}
+                                                                    </span>
+                                                                )
                                                             )}
                                                         </div>
                                                         <span className="font-mono text-slate-700">+{rule.amount.toLocaleString()}</span>
