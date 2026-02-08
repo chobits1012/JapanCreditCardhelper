@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calculator, DollarSign, Store, Trophy, Plane, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { calculateReward, type CalculationResult, recalculateTransaction } from '../../services/calculator';
+import { useCalculator } from '../../hooks/useCalculator';
+import type { CalculationResult } from '../../core/calculator';
+import { recalculateTransaction } from '../../services/calculator';
 import type { MerchantCategory } from '../../types';
 
 export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction, mode, toggleMode } = useStore();
+    const { calculate } = useCalculator();
 
     // Form State
     const [amount, setAmount] = useState<number | ''>('');
@@ -113,12 +116,9 @@ export default function QuickCalculator() {
 
         const calculatedResults = activeCards.map(card => {
             const usageMap: Record<string, number> = {};
-            const program = card.programs[0]; // Active program logic simplification
 
-            // 1. Pre-fetch usage for all rules of this card (to pass to calculator and for display)
-            // Ideally we should know WHICH program is active. 
-            // calculateReward does internal generic check, but for usageMap we need keys.
-            // We'll trust the calculator to apply the right ones, but we provide usage for ALL.
+            // 1. Pre-fetch usage for all rules of this card
+            const program = card.programs[0];
             if (program) {
                 program.bonusRules.forEach(rule => {
                     const usage = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27, card.billingCycleType);
@@ -126,8 +126,8 @@ export default function QuickCalculator() {
                 });
             }
 
-            // 2. Perform Calculation
-            return calculateReward(card, baseTx, usageMap, mode);
+            // 2. Perform Calculation (使用新版計算器)
+            return calculate(card, baseTx, usageMap, mode);
         });
 
         // 3. Sort logic:
