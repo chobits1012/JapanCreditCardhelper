@@ -5,3 +5,11 @@
  */
 
 export { ProgramMatcher } from './ProgramMatcher';
+export {
+    RewardCalculator,
+    createCalculatorWithStore,
+    type CalculationResult,
+    type RuleBreakdown,
+    type CalculationMode,
+    type CumulativeSpendingCalculator
+} from './RewardCalculator';
