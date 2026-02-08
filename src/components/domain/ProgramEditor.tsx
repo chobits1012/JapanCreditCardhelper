@@ -1,4 +1,5 @@
-import { Plus, Bookmark, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Bookmark, Trash2, X } from 'lucide-react';
 
 import { BONUS_PRESETS } from '../../data/bonusPresets';
 import BonusRuleEditor from './BonusRuleEditor';
@@ -40,6 +41,13 @@ export default function ProgramEditor({
     onDelete,
     onToggleExpand
 }: ProgramEditorProps) {
+    const [showPresetPicker, setShowPresetPicker] = useState(false);
+
+    const handleApplyPreset = (presetId: string) => {
+        onApplyPreset(presetId);
+        setShowPresetPicker(false);
+    };
+
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Program Header - Always Visible */}
@@ -138,31 +146,14 @@ export default function ProgramEditor({
                         <div className="flex justify-between items-center">
                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">特別加碼活動</label>
                             <div className="flex gap-2">
-                                <div className="relative group">
-                                    <button
-                                        type="button"
-                                        className="text-xs flex items-center gap-1 text-amber-600 hover:text-amber-800 font-bold px-2 py-1 bg-amber-50 rounded-lg border border-amber-200 transition-all active:scale-95"
-                                    >
-                                        <Bookmark className="w-3 h-3" />
-                                        預設
-                                    </button>
-                                    {/* Preset Dropdown */}
-                                    <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 z-10 min-w-[180px]">
-                                        {BONUS_PRESETS.map(preset => (
-                                            <button
-                                                key={preset.id}
-                                                type="button"
-                                                onClick={() => onApplyPreset(preset.id)}
-                                                className="w-full text-left px-3 py-2 text-sm hover:bg-amber-50 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                                            >
-                                                <p className="font-medium text-gray-800">{preset.name}</p>
-                                                {preset.description && (
-                                                    <p className="text-xs text-gray-500">{preset.description}</p>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPresetPicker(true)}
+                                    className="text-xs flex items-center gap-1 text-amber-600 hover:text-amber-800 font-bold px-2 py-1 bg-amber-50 rounded-lg border border-amber-200 transition-all active:scale-95"
+                                >
+                                    <Bookmark className="w-3 h-3" />
+                                    預設
+                                </button>
                                 <button
                                     type="button"
                                     onClick={onAddRule}
@@ -205,6 +196,44 @@ export default function ProgramEditor({
                             </button>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Preset Picker Modal */}
+            {showPresetPicker && (
+                <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0" onClick={() => setShowPresetPicker(false)} />
+                    <div className="bg-white rounded-xl w-full max-w-xs shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 fade-in duration-200">
+                        <div className="flex items-center justify-between p-3 border-b border-gray-100">
+                            <h4 className="font-bold text-gray-800">選擇預設加碼</h4>
+                            <button
+                                type="button"
+                                onClick={() => setShowPresetPicker(false)}
+                                className="p-1 text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="p-2 max-h-60 overflow-y-auto">
+                            {BONUS_PRESETS.length === 0 ? (
+                                <p className="text-center text-gray-400 py-6">尚無預設可選擇</p>
+                            ) : (
+                                BONUS_PRESETS.map(preset => (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        onClick={() => handleApplyPreset(preset.id)}
+                                        className="w-full text-left p-3 rounded-lg hover:bg-amber-50 transition-colors"
+                                    >
+                                        <p className="font-medium text-gray-800">{preset.name}</p>
+                                        {preset.description && (
+                                            <p className="text-xs text-gray-500 mt-0.5">{preset.description}</p>
+                                        )}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
