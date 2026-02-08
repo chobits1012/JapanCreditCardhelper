@@ -1,78 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import type { CreditCard, BillingCycleType } from '../../types';
-import { ChevronLeft, Sparkles, Loader2, Plus, Bookmark, X, Undo2 } from 'lucide-react';
-import { BONUS_PRESETS, createBonusRuleStateFromPreset } from '../../data/bonusPresets';
-import { format, addYears } from 'date-fns';
+import { ChevronLeft, Sparkles, Loader2, Plus } from 'lucide-react';
+
 import { MockBankService } from '../../services/bankData';
 import { CARD_THEMES, getThemeByKeyword } from './cardThemes';
 import ConfirmModal from '../ui/ConfirmModal';
-import BonusRuleEditor from './BonusRuleEditor';
-import {
-    createBonusRuleStatesFromRules,
-    convertToDomainBonusRules,
-} from '../../utils/bonusRuleHelpers';
-import { useBonusRules } from '../../hooks/useBonusRules';
+import ProgramEditor from './ProgramEditor';
+import { usePrograms, type ProgramFormState } from '../../hooks/usePrograms';
+import { createBonusRuleStatesFromRules } from '../../utils/bonusRuleHelpers';
 
 interface CardDataFormProps {
     onBack: () => void;
     initialCard?: CreditCard;
 }
 
-// BonusRuleState is now imported from utils/bonusRuleHelpers.ts
-
-// PAYMENT_OPTIONS moved to BonusRuleEditor.tsx
-
 export default function CardDataForm({ onBack, initialCard }: CardDataFormProps) {
     const { addCard, updateCard, removeCard } = useStore();
     const isEditMode = !!initialCard;
 
-    // --- State Initialization ---
-    const activeProgram = initialCard?.programs[0];
-
-    // Bonus Rules - managed by custom hook
+    // Multi-Program Management
     const {
-        bonusRules,
-        setBonusRules,
-        addRule,
-        removeRule,
-        updateRule,
-        toggleRulePaymentMethod,
-        lastDeletedRule,
-        undoLastDelete,
-        clearDeletedRule,
-    } = useBonusRules({
-        initialRules: activeProgram?.bonusRules,
-        syncDeps: [initialCard?.id, activeProgram?.bonusRules.length],
+        programs,
+        setPrograms,
+        expandedProgramId,
+        addProgram,
+        removeProgram,
+        updateProgram,
+        toggleExpanded,
+        addBonusRule,
+        removeBonusRule,
+        updateBonusRule,
+        toggleBonusRulePaymentMethod,
+        applyPreset,
+        toDomainPrograms
+    } = usePrograms({
+        initialPrograms: initialCard?.programs,
+        cardId: initialCard?.id
     });
-
-    // Auto-dismiss undo toast after 5 seconds
-    useEffect(() => {
-        if (lastDeletedRule) {
-            const timer = setTimeout(() => {
-                clearDeletedRule();
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [lastDeletedRule, clearDeletedRule]);
 
     // Card Form State
     const [name, setName] = useState(initialCard?.name || '');
     const [bank, setBank] = useState(initialCard?.bank || '');
-    // Initialize theme: from card data OR predict from name/bank if editing
     const [colorTheme, setColorTheme] = useState<string>(
         initialCard?.colorTheme || (initialCard ? getThemeByKeyword(initialCard.bank, initialCard.name) : 'matte_black')
     );
     const [statementDate, setStatementDate] = useState(initialCard?.statementDate?.toString() || '27');
     const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>(initialCard?.billingCycleType || 'calendar');
     const [foreignTxFee, setForeignTxFee] = useState(initialCard?.foreignTxFee?.toString() || '1.5');
-
-    // Split Base Rates
-    const [baseRateOverseas, setBaseRateOverseas] = useState(activeProgram ? (activeProgram.baseRateOverseas * 100).toString() : '1');
-    const [baseRateDomestic, setBaseRateDomestic] = useState(activeProgram ? (activeProgram.baseRateDomestic * 100).toString() : '1');
-
-    const [programStartDate, setProgramStartDate] = useState(activeProgram?.startDate || format(new Date(), 'yyyy-MM-dd'));
-    const [programEndDate, setProgramEndDate] = useState(activeProgram?.endDate || format(addYears(new Date(), 2), 'yyyy-MM-dd'));
     const [supportedPaymentMethods, setSupportedPaymentMethods] = useState<string[]>(initialCard?.supportedPaymentMethods || []);
 
     // Auto-fill State
@@ -80,18 +55,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
 
     // Delete Confirmation State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    // Preset Picker State
-    const [showPresetPicker, setShowPresetPicker] = useState(false);
-
-    const handleApplyPreset = (presetId: string) => {
-        const preset = BONUS_PRESETS.find(p => p.id === presetId);
-        if (preset) {
-            const newRule = createBonusRuleStateFromPreset(preset);
-            setBonusRules(prev => [newRule, ...prev]);
-            setShowPresetPicker(false);
-        }
-    };
 
     const handleAutoFill = async () => {
         if (!bank && !name) {
@@ -105,28 +68,25 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             const template = await MockBankService.fetchCardTemplate(keyword);
 
             if (template) {
-                // Apply template
                 if (template.name) setName(template.name);
                 if (template.bank) setBank(template.bank);
-                // Auto-select theme based on keyword
                 setColorTheme(getThemeByKeyword(template.bank || '', template.name || ''));
 
-                const prog = template.programs?.[0];
-                if (prog) {
-                    setBaseRateOverseas((prog.baseRateOverseas * 100).toString());
-                    setBaseRateDomestic((prog.baseRateDomestic * 100).toString());
-
-                    if (prog.bonusRules && prog.bonusRules.length > 0) {
-                        // Use helper but generate new IDs for template rules
-                        const newRules = createBonusRuleStatesFromRules(prog.bonusRules).map(r => ({
+                // Convert template programs to form state
+                if (template.programs && template.programs.length > 0) {
+                    const newPrograms: ProgramFormState[] = template.programs.map(prog => ({
+                        id: crypto.randomUUID(),
+                        name: prog.name,
+                        startDate: prog.startDate,
+                        endDate: prog.endDate,
+                        baseRateOverseas: (prog.baseRateOverseas * 100).toString(),
+                        baseRateDomestic: (prog.baseRateDomestic * 100).toString(),
+                        bonusRules: createBonusRuleStatesFromRules(prog.bonusRules).map(r => ({
                             ...r,
-                            id: crypto.randomUUID(), // Generate new IDs for template rules
-                        }));
-                        setBonusRules(newRules);
-                    }
-
-                    if (prog.startDate) setProgramStartDate(prog.startDate);
-                    if (prog.endDate) setProgramEndDate(prog.endDate);
+                            id: crypto.randomUUID()
+                        }))
+                    }));
+                    setPrograms(newPrograms);
                 }
             } else {
                 alert('找不到符合的卡片資料，請嘗試關鍵字（如：富邦 J, CUBE）');
@@ -142,21 +102,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
         e.preventDefault();
 
         const cardId = initialCard?.id || crypto.randomUUID();
-        const programId = activeProgram?.id || crypto.randomUUID();
-
-        // Convert BonusRuleState back to Domain BonusRule using centralized helper
-        const domainBonusRules = convertToDomainBonusRules(bonusRules);
-
-        const updatedProgram = {
-            id: programId,
-            cardId: cardId,
-            name: activeProgram?.name || '預設權益',
-            startDate: programStartDate,
-            endDate: programEndDate,
-            baseRateOverseas: parseFloat(baseRateOverseas) / 100,
-            baseRateDomestic: parseFloat(baseRateDomestic) / 100,
-            bonusRules: domainBonusRules
-        };
 
         const cardData: CreditCard = {
             id: cardId,
@@ -165,9 +110,9 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
             statementDate: parseInt(statementDate) || 27,
             billingCycleType,
             foreignTxFee: parseFloat(foreignTxFee) || 1.5,
-            supportedPaymentMethods, // Ensure card level still has these
-            colorTheme, // Save selected theme
-            programs: [updatedProgram]
+            supportedPaymentMethods,
+            colorTheme,
+            programs: toDomainPrograms(cardId)
         };
 
         if (isEditMode) {
@@ -217,8 +162,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 )}
 
                 {/* Card Level Special Payment Support */}
-                <div className={`space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300 fill-mode-backwards`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">此卡片支援的特殊支付 (卡片層級)</label>
+                <div className="space-y-3 pt-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">此卡片支援的特殊支付</label>
                     <div className="bg-white/40 p-4 rounded-xl border border-white/40 space-y-2">
                         <p className="text-[10px] text-gray-400 mb-2">勾選後，當在試算頁面選擇該支付方式時，此卡片才會顯示出來。</p>
                         {['PayPay (玉山Wallet)', 'PayPay (全支付)', 'PayPay (街口)'].map(method => (
@@ -261,7 +206,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                     className="w-10 h-10 rounded-full shadow-sm border border-black/5 relative overflow-hidden transition-transform group-hover:scale-110"
                                     style={{ background: theme.previewColor }}
                                 >
-                                    {/* Glass reflection effect */}
                                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/30" />
                                 </div>
                                 <span className={`text-[10px] font-medium text-center leading-tight
@@ -269,7 +213,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                 `}>
                                     {theme.name}
                                 </span>
-
                                 {colorTheme === theme.id && (
                                     <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-md ring-1 ring-black/5" />
                                 )}
@@ -305,30 +248,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">🇯🇵 海外回饋 (%)</label>
-                            <input
-                                required
-                                type="number"
-                                step="0.1"
-                                value={baseRateOverseas}
-                                onChange={e => setBaseRateOverseas(e.target.value)}
-                                className="w-full p-2 bg-indigo-50/50 border border-indigo-100 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">🇹🇼 國內回饋 (%)</label>
-                            <input
-                                required
-                                type="number"
-                                step="0.1"
-                                value={baseRateDomestic}
-                                onChange={e => setBaseRateDomestic(e.target.value)}
-                                className="w-full p-2 bg-orange-50/50 border border-orange-100 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
                             <label className="block text-xs font-medium text-gray-500 mb-1">結帳日 (每月幾號)</label>
                             <input
                                 required
@@ -348,8 +267,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                     type="button"
                                     onClick={() => setBillingCycleType('calendar')}
                                     className={`flex-1 py-2 text-xs font-medium transition-all ${billingCycleType === 'calendar'
-                                            ? 'bg-indigo-500 text-white'
-                                            : 'text-gray-500 hover:bg-gray-100'
+                                        ? 'bg-indigo-500 text-white'
+                                        : 'text-gray-500 hover:bg-gray-100'
                                         }`}
                                 >
                                     自然月
@@ -358,8 +277,8 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                                     type="button"
                                     onClick={() => setBillingCycleType('statement')}
                                     className={`flex-1 py-2 text-xs font-medium transition-all ${billingCycleType === 'statement'
-                                            ? 'bg-indigo-500 text-white'
-                                            : 'text-gray-500 hover:bg-gray-100'
+                                        ? 'bg-indigo-500 text-white'
+                                        : 'text-gray-500 hover:bg-gray-100'
                                         }`}
                                 >
                                     結帳月
@@ -380,74 +299,38 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                     </div>
                 </div>
 
-                {/* Program Dates */}
-                <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
-                    <h2 className="text-sm font-bold text-gray-700">權益期間</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">開始日期</label>
-                            <input
-                                type="date"
-                                required
-                                value={programStartDate}
-                                onChange={e => setProgramStartDate(e.target.value)}
-                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">結束日期</label>
-                            <input
-                                type="date"
-                                required
-                                value={programEndDate}
-                                onChange={e => setProgramEndDate(e.target.value)}
-                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bonus Config - Multiple Rules */}
+                {/* Programs Section */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">特別加碼活動</label>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowPresetPicker(true)}
-                                className="text-xs flex items-center gap-1 text-amber-600 hover:text-amber-800 font-bold px-2 py-1 bg-amber-50 rounded-lg border border-amber-200 transition-all active:scale-95"
-                            >
-                                <Bookmark className="w-3 h-3" />
-                                帶入預設
-                            </button>
-                            <button
-                                type="button"
-                                onClick={addRule}
-                                className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-bold px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 transition-all active:scale-95"
-                            >
-                                <Plus className="w-3 h-3" />
-                                新增活動
-                            </button>
-                        </div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">權益期間</label>
+                        <button
+                            type="button"
+                            onClick={addProgram}
+                            className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-bold px-2 py-1 bg-primary-50 rounded-lg border border-primary-200 transition-all active:scale-95"
+                        >
+                            <Plus className="w-3 h-3" />
+                            新增期間
+                        </button>
                     </div>
 
-                    <div className="space-y-4">
-                        {bonusRules.map((rule, index) => (
-                            <BonusRuleEditor
-                                key={rule.id}
-                                rule={rule}
-                                index={index + 1}
-                                onUpdate={(field, value) => updateRule(rule.id, field, value)}
-                                onRemove={() => removeRule(rule.id)}
-                                onTogglePaymentMethod={(method) => toggleRulePaymentMethod(rule.id, method)}
+                    <div className="space-y-3">
+                        {programs.map(program => (
+                            <ProgramEditor
+                                key={program.id}
+                                program={program}
+                                bonusRules={program.bonusRules}
+                                isExpanded={expandedProgramId === program.id}
+                                canDelete={programs.length > 1}
+                                onUpdateProgram={(field, value) => updateProgram(program.id, field, value)}
+                                onAddRule={() => addBonusRule(program.id)}
+                                onRemoveRule={(ruleId) => removeBonusRule(program.id, ruleId)}
+                                onUpdateRule={(ruleId, field, value) => updateBonusRule(program.id, ruleId, field, value)}
+                                onToggleRulePaymentMethod={(ruleId, method) => toggleBonusRulePaymentMethod(program.id, ruleId, method)}
+                                onApplyPreset={(presetId) => applyPreset(program.id, presetId)}
+                                onDelete={() => removeProgram(program.id)}
+                                onToggleExpand={() => toggleExpanded(program.id)}
                             />
                         ))}
-
-                        {bonusRules.length === 0 && (
-                            <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-400 text-sm">
-                                尚未新增任何加碼活動
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -485,89 +368,6 @@ export default function CardDataForm({ onBack, initialCard }: CardDataFormProps)
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
-
-            {/* Preset Picker Modal */}
-            {showPresetPicker && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-safe">
-                    <div
-                        className="absolute inset-0"
-                        onClick={() => setShowPresetPicker(false)}
-                    />
-                    <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-200 relative z-10">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800">選擇加碼優惠預設</h3>
-                            <button
-                                type="button"
-                                onClick={() => setShowPresetPicker(false)}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-                            {BONUS_PRESETS.length === 0 ? (
-                                <p className="text-center text-gray-400 py-8">尚無預設可選擇</p>
-                            ) : (
-                                BONUS_PRESETS.map(preset => (
-                                    <button
-                                        key={preset.id}
-                                        type="button"
-                                        onClick={() => handleApplyPreset(preset.id)}
-                                        className="w-full text-left p-4 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all active:scale-98 group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                                                <Bookmark className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-gray-800 group-hover:text-amber-700 transition-colors">
-                                                    {preset.name}
-                                                </p>
-                                                {preset.description && (
-                                                    <p className="text-xs text-gray-500 mt-0.5 truncate">
-                                                        {preset.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                        <div className="p-3 bg-gray-50 border-t border-gray-100">
-                            <p className="text-xs text-gray-400 text-center">
-                                選擇後會新增至加碼活動列表最上方
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Undo Delete Toast */}
-            {lastDeletedRule && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-                    <div className="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3">
-                        <span className="text-sm">
-                            已刪除「{lastDeletedRule.name}」
-                        </span>
-                        <button
-                            type="button"
-                            onClick={undoLastDelete}
-                            className="flex items-center gap-1 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
-                        >
-                            <Undo2 className="w-4 h-4" />
-                            復原
-                        </button>
-                        <button
-                            type="button"
-                            onClick={clearDeletedRule}
-                            className="text-white/60 hover:text-white/90 transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
