@@ -24,7 +24,7 @@ interface AppState {
     completeOnboarding: () => void;
 
     // Computed helpers
-    getRuleUsage: (ruleId: string, date: string, statementDate?: number, billingCycleType?: BillingCycleType) => number;
+    getRuleUsage: (ruleId: string, cardId: string, date: string, statementDate?: number, billingCycleType?: BillingCycleType) => number;
 }
 
 export const useStore = create<AppState>()(
@@ -79,7 +79,7 @@ export const useStore = create<AppState>()(
 
             completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
-            getRuleUsage: (ruleId: string, targetDateStr: string, statementDate: number = 31, billingCycleType: BillingCycleType = 'calendar') => {
+            getRuleUsage: (ruleId: string, cardId: string, targetDateStr: string, statementDate: number = 31, billingCycleType: BillingCycleType = 'calendar') => {
                 const { transactions, cards } = get();
 
                 // 1. Find the Rule Definition to check its capPeriod
@@ -133,6 +133,9 @@ export const useStore = create<AppState>()(
                 }
 
                 return transactions.reduce((sum, t) => {
+                    // Only count transactions for the specified card
+                    if (t.cardId !== cardId) return sum;
+
                     const tDate = new Date(t.date);
                     // Check if transaction falls within the determined period
                     if (tDate >= start && tDate <= end) {

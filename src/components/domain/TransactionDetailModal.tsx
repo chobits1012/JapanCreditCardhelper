@@ -50,7 +50,7 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction }:
 
             program.bonusRules.forEach(rule => {
                 // Get current usage for this rule
-                let used = getRuleUsage(rule.id, date, selectedCard.statementDate || 27, selectedCard.billingCycleType);
+                let used = getRuleUsage(rule.id, cardId, date, selectedCard.statementDate || 27, selectedCard.billingCycleType);
 
                 // Only subtract the current transaction's usage if:
                 // 1. We're NOT switching cards (same card edit)

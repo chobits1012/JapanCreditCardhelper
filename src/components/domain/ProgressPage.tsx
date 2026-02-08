@@ -141,7 +141,7 @@ export default function ProgressPage() {
                                     <div className="p-5 space-y-6">
                                         {rulesWithCaps.map(rule => {
                                             const nowStr = format(new Date(), 'yyyy-MM-dd');
-                                            const used = getRuleUsage(rule.id, nowStr, card.statementDate || 27, card.billingCycleType);
+                                            const used = getRuleUsage(rule.id, card.id, nowStr, card.statementDate || 27, card.billingCycleType);
                                             const cap = rule.capAmount || 0;
                                             const safeUsed = typeof used === 'number' ? used : 0;
                                             const safeCap = typeof cap === 'number' && cap > 0 ? cap : 1;

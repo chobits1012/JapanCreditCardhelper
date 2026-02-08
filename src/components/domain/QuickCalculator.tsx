@@ -121,7 +121,7 @@ export default function QuickCalculator() {
             const program = card.programs[0];
             if (program) {
                 program.bonusRules.forEach(rule => {
-                    const usage = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27, card.billingCycleType);
+                    const usage = useStore.getState().getRuleUsage(rule.id, card.id, date, card.statementDate || 27, card.billingCycleType);
                     usageMap[rule.id] = usage;
                 });
             }
@@ -149,7 +149,7 @@ export default function QuickCalculator() {
         const program = card.programs[0];
         if (program) {
             program.bonusRules.forEach(rule => {
-                usageMap[rule.id] = useStore.getState().getRuleUsage(rule.id, date, card.statementDate || 27, card.billingCycleType);
+                usageMap[rule.id] = useStore.getState().getRuleUsage(rule.id, card.id, date, card.statementDate || 27, card.billingCycleType);
             });
         }
 
@@ -395,7 +395,7 @@ export default function QuickCalculator() {
                                         <div className="space-y-1.5 pt-1">
                                             {res.breakdown.map((rule, i) => {
                                                 // Fetch active usage for this rule to show remaining cap
-                                                const usage = useStore.getState().getRuleUsage(rule.ruleId, date, card.statementDate || 27, card.billingCycleType);
+                                                const usage = useStore.getState().getRuleUsage(rule.ruleId, card.id, date, card.statementDate || 27, card.billingCycleType);
                                                 const cap = rule.capLimit || 0;
                                                 const remaining = Math.max(0, cap - usage);
                                                 const isNearCap = cap > 0 && remaining < (Number(amount) * 0.1); // arbitrary warning threshold
