@@ -39,6 +39,7 @@ export function getActiveProgram(card: CreditCard, date: string): RewardProgram 
  * Used for cumulative threshold rules (e.g., "spend 100k JPY total to trigger bonus")
  * 
  * @param currentTxId - Current transaction ID to exclude from calculation
+ * @param cardId - Card ID to filter transactions for
  * @param startDate - Start of the calculation period
  * @param endDate - End of the calculation period
  * @param currency - Currency to sum in ('TWD' or 'JPY')
@@ -46,6 +47,7 @@ export function getActiveProgram(card: CreditCard, date: string): RewardProgram 
  */
 export function calculateCumulativeSpending(
     currentTxId: string,
+    cardId: string,
     startDate: string,
     endDate: string,
     currency: 'TWD' | 'JPY'
@@ -56,6 +58,7 @@ export function calculateCumulativeSpending(
 
     return transactions
         .filter(tx => tx.id !== currentTxId) // Exclude current transaction
+        .filter(tx => tx.cardId === cardId) // Only count transactions for this card
         .filter(tx => {
             const txDate = parseISO(tx.date);
             return isWithinInterval(txDate, { start: startDateObj, end: endDateObj });
@@ -212,6 +215,7 @@ export function calculateReward(
                 // Calculate accumulated spending (excluding this transaction)
                 const accumulated = calculateCumulativeSpending(
                     transaction.id,
+                    card.id,
                     program.startDate,
                     program.endDate,
                     thresholdCurrency
@@ -239,6 +243,7 @@ export function calculateReward(
                 // Get accumulated spending (excluding current transaction)
                 const accumulated = calculateCumulativeSpending(
                     transaction.id,
+                    card.id,
                     program.startDate,
                     program.endDate,
                     thresholdCurrency
