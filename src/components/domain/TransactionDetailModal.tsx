@@ -40,27 +40,26 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction }:
     const handleSave = () => {
         if (!selectedCard) return;
 
-        // 1. Calculate usage map excluding THIS transaction
-        // Since getRuleUsage checks all transactions, we'd need a version that excludes one.
-        // For simplicity, we can fetch useStore.getState().transactions and filter it.
-
-        // Calculate usage manually for other transactions
+        // Calculate usage map for the NEW card's rules
+        // We need to EXCLUDE the current transaction's contribution to avoid double-counting
         const usageMap: Record<string, number> = {};
-        const program = selectedCard.programs[0]; // Simplification for now
+        const program = selectedCard.programs[0];
 
         if (program) {
-            program.bonusRules.forEach(rule => {
-                // Determine Calculation Period for this rule
-                // (Logic copied/simplified from getRuleUsage)
-                // In a real app, getRuleUsage should be refactored to accept a transaction list.
+            const isCardSwitched = transaction.cardId !== cardId;
 
-                // For now, let's call getRuleUsage and SUBTRACT this transaction's usage if it had any.
+            program.bonusRules.forEach(rule => {
+                // Get current usage for this rule
                 let used = getRuleUsage(rule.id, date, selectedCard.statementDate || 27, selectedCard.billingCycleType);
 
-                // If the ORIGINAL transaction used this rule, subtract it
-                if (transaction.cardId === cardId && transaction.ruleUsageMap?.[rule.id]) {
+                // Only subtract the current transaction's usage if:
+                // 1. We're NOT switching cards (same card edit)
+                // 2. The original transaction actually used this rule
+                if (!isCardSwitched && transaction.ruleUsageMap?.[rule.id]) {
                     used -= transaction.ruleUsageMap[rule.id];
                 }
+                // When switching cards, the new card's rules won't have existing usage from this transaction
+                // (because it was recorded under the old card), so no subtraction needed
 
                 usageMap[rule.id] = Math.max(0, used);
             });
