@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, DollarSign, Store, Calendar, CreditCard as CardIcon } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { recalculateTransaction } from '../../services/calculator';
+import { recalculateTransaction, recalculateCardTransactions } from '../../services/calculator';
 import type { MerchantCategory, Transaction } from '../../types';
 
 interface TransactionDetailModalProps {
@@ -36,30 +36,26 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction }:
     if (!isOpen) return null;
 
     const selectedCard = cards.find(c => c.id === cardId);
+    const oldCard = cards.find(c => c.id === transaction.cardId);
 
     const handleSave = () => {
         if (!selectedCard) return;
 
+        const isCardSwitched = transaction.cardId !== cardId;
+
         // Calculate usage map for the NEW card's rules
-        // We need to EXCLUDE the current transaction's contribution to avoid double-counting
         const usageMap: Record<string, number> = {};
         const program = selectedCard.programs[0];
 
         if (program) {
-            const isCardSwitched = transaction.cardId !== cardId;
-
             program.bonusRules.forEach(rule => {
                 // Get current usage for this rule
                 let used = getRuleUsage(rule.id, cardId, date, selectedCard.statementDate || 27, selectedCard.billingCycleType);
 
-                // Only subtract the current transaction's usage if:
-                // 1. We're NOT switching cards (same card edit)
-                // 2. The original transaction actually used this rule
+                // Only subtract the current transaction's usage if NOT switching cards
                 if (!isCardSwitched && transaction.ruleUsageMap?.[rule.id]) {
                     used -= transaction.ruleUsageMap[rule.id];
                 }
-                // When switching cards, the new card's rules won't have existing usage from this transaction
-                // (because it was recorded under the old card), so no subtraction needed
 
                 usageMap[rule.id] = Math.max(0, used);
             });
@@ -75,11 +71,28 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction }:
             category,
             paymentMethod,
             cardId: cardId,
-            programId: transaction.programId, // Keep original program unless we want to find a more suitable one for the new date
+            programId: transaction.programId,
         };
 
+        // 1. Calculate the edited transaction
         const finalTx = recalculateTransaction(selectedCard, updatedTxData, usageMap, mode);
         updateTransaction(finalTx);
+
+        // 2. If card was switched, recalculate ALL transactions on the OLD card
+        //    This ensures cumulative thresholds are properly updated
+        if (isCardSwitched && oldCard) {
+            // Get current transactions (including the one we just updated)
+            const currentTransactions = useStore.getState().transactions;
+
+            // Recalculate old card's transactions (the edited tx is no longer on this card)
+            const recalculatedOldCardTxs = recalculateCardTransactions(oldCard, currentTransactions, mode);
+
+            // Update each recalculated transaction
+            recalculatedOldCardTxs.forEach(tx => {
+                updateTransaction(tx);
+            });
+        }
+
         onClose();
     };
 

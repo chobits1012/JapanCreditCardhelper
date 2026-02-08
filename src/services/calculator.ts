@@ -387,3 +387,56 @@ export function recalculateTransaction(
         ruleUsageMap
     } as Transaction;
 }
+
+/**
+ * Recalculate all transactions for a specific card.
+ * This is needed when cumulative thresholds are involved and one transaction is modified.
+ * Transactions are recalculated in date order to ensure cumulative totals are correct.
+ * 
+ * @param card - The card to recalculate transactions for
+ * @param transactions - All transactions (will be filtered by cardId)
+ * @param mode - Calculation mode
+ * @returns Updated transactions array (only for this card)
+ */
+export function recalculateCardTransactions(
+    card: CreditCard,
+    transactions: Transaction[],
+    mode: 'travel' | 'daily' = 'travel'
+): Transaction[] {
+    // Filter and sort transactions by date
+    const cardTransactions = transactions
+        .filter(tx => tx.cardId === card.id)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Recalculate each transaction in order
+    // The usageMap is built incrementally as we process each transaction
+    const usageMap: Record<string, number> = {};
+
+    return cardTransactions.map(tx => {
+        // Create base transaction data
+        const baseTx: Omit<Transaction, 'calculatedRewardAmount' | 'appliedRuleNames' | 'ruleUsageMap'> = {
+            id: tx.id,
+            date: tx.date,
+            amount: tx.amount,
+            currency: tx.currency,
+            exchangeRate: tx.exchangeRate,
+            merchantName: tx.merchantName,
+            category: tx.category,
+            paymentMethod: tx.paymentMethod,
+            cardId: tx.cardId,
+            programId: tx.programId,
+        };
+
+        // Recalculate this transaction with current usageMap
+        const result = recalculateTransaction(card, baseTx, { ...usageMap }, mode);
+
+        // Update usageMap with this transaction's contribution
+        if (result.ruleUsageMap) {
+            Object.entries(result.ruleUsageMap).forEach(([ruleId, amount]) => {
+                usageMap[ruleId] = (usageMap[ruleId] || 0) + amount;
+            });
+        }
+
+        return result;
+    });
+}
