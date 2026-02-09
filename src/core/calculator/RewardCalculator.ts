@@ -38,6 +38,7 @@ export type CalculationMode = 'travel' | 'daily';
  */
 export type CumulativeSpendingCalculator = (
     currentTxId: string,
+    cardId: string,
     startDate: string,
     endDate: string,
     currency: 'TWD' | 'JPY'
@@ -300,6 +301,7 @@ export class RewardCalculator {
 
         const accumulated = this.cumulativeCalculator(
             transaction.id,
+            transaction.cardId,
             program.startDate,
             program.endDate,
             thresholdCurrency
@@ -399,6 +401,7 @@ export class RewardCalculator {
         const thresholdCurrency = rule.minAmountCurrency || 'TWD';
         const accumulated = this.cumulativeCalculator(
             transaction.id,
+            transaction.cardId,
             program.startDate,
             program.endDate,
             thresholdCurrency
@@ -515,6 +518,7 @@ export function createCalculatorWithStore(
 ): RewardCalculator {
     const cumulativeCalculator: CumulativeSpendingCalculator = (
         currentTxId,
+        cardId,
         startDate,
         endDate,
         currency
@@ -525,6 +529,7 @@ export function createCalculatorWithStore(
 
         return transactions
             .filter(tx => tx.id !== currentTxId)
+            .filter(tx => tx.cardId === cardId) // 只計算同一張卡片的交易
             .filter(tx => {
                 const txDate = parseISO(tx.date);
                 return isWithinInterval(txDate, { start: startDateObj, end: endDateObj });
