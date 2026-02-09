@@ -299,11 +299,16 @@ export class RewardCalculator {
             return true;
         }
 
+        // 優先使用規則自己的日期範圍（如 JCB 春季加碼有特定活動期間）
+        // 若規則沒有日期，則回退使用 program 的日期範圍
+        const startDate = rule.startDate || program.startDate;
+        const endDate = rule.endDate || program.endDate;
+
         const accumulated = this.cumulativeCalculator(
             transaction.id,
             transaction.cardId,
-            program.startDate,
-            program.endDate,
+            startDate,
+            endDate,
             thresholdCurrency
         );
 
@@ -399,11 +404,16 @@ export class RewardCalculator {
         }
 
         const thresholdCurrency = rule.minAmountCurrency || 'TWD';
+
+        // 優先使用規則自己的日期範圍
+        const startDate = rule.startDate || program.startDate;
+        const endDate = rule.endDate || program.endDate;
+
         const accumulated = this.cumulativeCalculator(
             transaction.id,
             transaction.cardId,
-            program.startDate,
-            program.endDate,
+            startDate,
+            endDate,
             thresholdCurrency
         );
 
