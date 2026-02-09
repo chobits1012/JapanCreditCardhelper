@@ -13,10 +13,14 @@ export const DATA_VERSIONS = {
 
     /** 多 Program 支援 - 完整的 programs 陣列結構 */
     V3_MULTI_PROGRAM: 3,
+
+    /** 固定金額回饋類型支援 - 轉換 JCB 春季加碼規則 */
+    V4_FIXED_REWARD: 4,
 } as const;
 
 /** 目前資料版本 */
-export const CURRENT_VERSION = DATA_VERSIONS.V3_MULTI_PROGRAM;
+export const CURRENT_VERSION = DATA_VERSIONS.V4_FIXED_REWARD;
 
 /** 儲存版本號的 Key */
 export const VERSION_KEY = 'credit-card-store-version';
+

@@ -7,9 +7,11 @@
 export { MigrationManager, getMigrationManager, type Migration, type MigrationResult } from './MigrationManager';
 export { DATA_VERSIONS, CURRENT_VERSION, VERSION_KEY } from './versions';
 export { migration_v3_multi_program } from './migrations/v3_multi_program';
+export { migration_v4_fixed_reward } from './migrations/v4_fixed_reward';
 
 import { getMigrationManager } from './MigrationManager';
 import { migration_v3_multi_program } from './migrations/v3_multi_program';
+import { migration_v4_fixed_reward } from './migrations/v4_fixed_reward';
 
 /**
  * 初始化遷移系統（註冊所有遷移腳本）
@@ -17,6 +19,7 @@ import { migration_v3_multi_program } from './migrations/v3_multi_program';
 export function initMigrationSystem(): void {
     const manager = getMigrationManager();
     manager.register(migration_v3_multi_program);
+    manager.register(migration_v4_fixed_reward);
 }
 
 /**

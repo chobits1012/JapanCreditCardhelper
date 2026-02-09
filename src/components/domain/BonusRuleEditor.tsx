@@ -50,8 +50,15 @@ export default function BonusRuleEditor({
     // Generate summary for collapsed view
     const getSummary = () => {
         const parts: string[] = [];
-        if (rule.rate) parts.push(`${rule.rate}%`);
-        if (rule.capAmount) parts.push(`上限 ${rule.capAmountCurrency === 'JPY' ? '¥' : '$'}${rule.capAmount}`);
+        if (rule.rewardType === 'fixed' && rule.fixedRewardAmount) {
+            const symbol = rule.fixedRewardCurrency === 'JPY' ? '¥' : '$';
+            parts.push(`固定 ${symbol}${rule.fixedRewardAmount}`);
+        } else if (rule.rate) {
+            parts.push(`${rule.rate}%`);
+        }
+        if (rule.rewardType !== 'fixed' && rule.capAmount) {
+            parts.push(`上限 ${rule.capAmountCurrency === 'JPY' ? '¥' : '$'}${rule.capAmount}`);
+        }
         if (rule.region === 'japan') parts.push('🇯🇵');
         if (rule.region === 'taiwan') parts.push('🇹🇼');
         if (rule.region === 'global') parts.push('🌍');
@@ -151,51 +158,106 @@ export default function BonusRuleEditor({
                         </div>
                     </div>
 
-                    {/* Rate and Cap Amount */}
-                    <div className="flex flex-wrap gap-2">
-                        <div className="flex-shrink-0">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">回饋率 (%)</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={rule.rate}
-                                onChange={e => onUpdate('rate', e.target.value)}
-                                className="w-20 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            />
-                        </div>
-                        <div className="flex-shrink-0">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">上限</label>
-                            <input
-                                type="number"
-                                placeholder="無上限"
-                                value={rule.capAmount}
-                                onChange={e => onUpdate('capAmount', e.target.value)}
-                                className="w-24 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            />
-                        </div>
-                        <div className="flex-shrink-0">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">幣別</label>
-                            <select
-                                value={rule.capAmountCurrency}
-                                onChange={e => onUpdate('capAmountCurrency', e.target.value)}
-                                className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            >
-                                <option value="TWD">TWD</option>
-                                <option value="JPY">JPY</option>
-                            </select>
-                        </div>
-                        <div className="flex-shrink-0">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">週期</label>
-                            <select
-                                value={rule.capPeriod}
-                                onChange={e => onUpdate('capPeriod', e.target.value)}
-                                className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                            >
-                                <option value="monthly">/月</option>
-                                <option value="campaign">/總</option>
-                            </select>
+                    {/* Reward Type Selector */}
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-2 rounded-lg border border-amber-200">
+                        <label className="block text-[10px] font-bold text-amber-600 uppercase mb-2">🎁 回饋類型</label>
+                        <div className="flex gap-2">
+                            {[
+                                { id: 'percentage', label: '百分比回饋', description: '如 3% 現金回饋' },
+                                { id: 'fixed', label: '固定金額', description: '達標後一次性回饋' }
+                            ].map((opt) => (
+                                <label key={opt.id} className="flex-1 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name={`rewardType-${rule.id}`}
+                                        value={opt.id}
+                                        checked={rule.rewardType === opt.id}
+                                        onChange={(e) => onUpdate('rewardType', e.target.value)}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="text-center py-2 px-2 rounded-md text-[11px] font-medium text-gray-600 bg-white border border-amber-200 transition-all peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 peer-checked:shadow-sm">
+                                        <div className="font-bold">{opt.label}</div>
+                                        <div className="text-[9px] opacity-80 mt-0.5">{opt.description}</div>
+                                    </div>
+                                </label>
+                            ))}
                         </div>
                     </div>
+
+                    {/* Percentage Reward Fields */}
+                    {rule.rewardType !== 'fixed' && (
+                        <div className="flex flex-wrap gap-2">
+                            <div className="flex-shrink-0">
+                                <label className="block text-xs font-medium text-gray-500 mb-1">回饋率 (%)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={rule.rate}
+                                    onChange={e => onUpdate('rate', e.target.value)}
+                                    className="w-20 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div className="flex-shrink-0">
+                                <label className="block text-xs font-medium text-gray-500 mb-1">上限</label>
+                                <input
+                                    type="number"
+                                    placeholder="無上限"
+                                    value={rule.capAmount}
+                                    onChange={e => onUpdate('capAmount', e.target.value)}
+                                    className="w-24 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div className="flex-shrink-0">
+                                <label className="block text-xs font-medium text-gray-500 mb-1">幣別</label>
+                                <select
+                                    value={rule.capAmountCurrency}
+                                    onChange={e => onUpdate('capAmountCurrency', e.target.value)}
+                                    className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                >
+                                    <option value="TWD">TWD</option>
+                                    <option value="JPY">JPY</option>
+                                </select>
+                            </div>
+                            <div className="flex-shrink-0">
+                                <label className="block text-xs font-medium text-gray-500 mb-1">週期</label>
+                                <select
+                                    value={rule.capPeriod}
+                                    onChange={e => onUpdate('capPeriod', e.target.value)}
+                                    className="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                >
+                                    <option value="monthly">/月</option>
+                                    <option value="campaign">/總</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Fixed Reward Fields */}
+                    {rule.rewardType === 'fixed' && (
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <label className="block text-[10px] font-bold text-green-600 uppercase mb-2">固定回饋金額</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="10000"
+                                    value={rule.fixedRewardAmount}
+                                    onChange={e => onUpdate('fixedRewardAmount', e.target.value)}
+                                    className="flex-1 p-2 bg-white border border-green-200 rounded-lg text-sm focus:ring-2 focus:ring-green-400 outline-none"
+                                />
+                                <select
+                                    value={rule.fixedRewardCurrency}
+                                    onChange={e => onUpdate('fixedRewardCurrency', e.target.value)}
+                                    className="p-2 bg-white border border-green-200 rounded-lg text-sm focus:ring-2 focus:ring-green-400 outline-none w-20 flex-shrink-0"
+                                >
+                                    <option value="JPY">¥ JPY</option>
+                                    <option value="TWD">$ TWD</option>
+                                </select>
+                            </div>
+                            <p className="text-[10px] text-green-600 mt-2">
+                                💡 達標後獲得一次性回饋，後續消費不再獲得此回饋
+                            </p>
+                        </div>
+                    )}
 
                     {/* Minimum Transaction Amount */}
                     <div>

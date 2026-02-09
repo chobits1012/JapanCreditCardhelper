@@ -14,10 +14,21 @@ import type { BonusRule, MerchantCategory } from '../types';
 export interface BonusRuleState {
     id: string;
     name: string;
+
+    // === 回饋類型 ===
+    rewardType: 'percentage' | 'fixed';     // 百分比回饋 或 固定金額回饋
+
+    // === 百分比回饋參數 ===
     rate: string;                           // String for form input (e.g., "3" for 3%)
     capAmount: string;                      // String for form input
     capAmountCurrency: 'TWD' | 'JPY';
     capPeriod: 'monthly' | 'campaign';
+
+    // === 固定金額回饋參數 ===
+    fixedRewardAmount: string;              // 固定回饋金額（表單用字串）
+    fixedRewardCurrency: 'TWD' | 'JPY';     // 固定回饋幣別
+
+    // === 其他欄位 ===
     checkJapan: boolean;                    // Checkbox for "includes all Japan channels"
     requiresRegistration: boolean;
     specificMerchants: string;              // Comma-separated string for form input
@@ -42,10 +53,13 @@ export function createBonusRuleStateFromRule(rule: BonusRule, displayIndex: numb
     return {
         id: rule.id,
         name: rule.name,
+        rewardType: rule.rewardType || 'percentage',
         rate: (rule.rate * 100).toString(),
         capAmount: rule.capAmount ? rule.capAmount.toString() : '',
         capAmountCurrency: rule.capAmountCurrency || 'TWD',
         capPeriod: (rule.capPeriod as 'monthly' | 'campaign') || 'monthly',
+        fixedRewardAmount: rule.fixedRewardAmount ? rule.fixedRewardAmount.toString() : '',
+        fixedRewardCurrency: rule.fixedRewardCurrency || 'JPY',
         checkJapan: rule.categories.includes('general_japan'),
         region: rule.region || 'japan',
         requiresRegistration: rule.requiresRegistration || false,
@@ -70,10 +84,13 @@ export function createEmptyBonusRuleState(): BonusRuleState {
     return {
         id: crypto.randomUUID(),
         name: '新加碼活動',
+        rewardType: 'percentage',
         rate: '3',
         capAmount: '',
         capAmountCurrency: 'TWD',
         capPeriod: 'monthly',
+        fixedRewardAmount: '',
+        fixedRewardCurrency: 'JPY',
         checkJapan: false,
         requiresRegistration: false,
         specificMerchants: '',
@@ -95,15 +112,24 @@ export function createEmptyBonusRuleState(): BonusRuleState {
  * @returns A BonusRule object ready for persistence
  */
 export function convertToDomainBonusRule(ruleState: BonusRuleState): BonusRule {
+    const isFixed = ruleState.rewardType === 'fixed';
+
     return {
         id: ruleState.id,
         name: ruleState.name,
-        rate: parseFloat(ruleState.rate) / 100,
+        rewardType: ruleState.rewardType,
+        rate: isFixed ? 0 : parseFloat(ruleState.rate) / 100, // 固定金額類型不使用 rate，但欄位必須有值
+        fixedRewardAmount: isFixed && ruleState.fixedRewardAmount
+            ? parseInt(ruleState.fixedRewardAmount)
+            : undefined,
+        fixedRewardCurrency: isFixed && ruleState.fixedRewardAmount
+            ? ruleState.fixedRewardCurrency
+            : undefined,
         categories: ruleState.checkJapan
             ? ['general_japan', 'drugstore', 'electronics', 'department', 'convenience'] as MerchantCategory[]
             : [],
-        capAmount: ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
-        capAmountCurrency: ruleState.capAmount ? ruleState.capAmountCurrency : undefined,
+        capAmount: !isFixed && ruleState.capAmount ? parseInt(ruleState.capAmount) : undefined,
+        capAmountCurrency: !isFixed && ruleState.capAmount ? ruleState.capAmountCurrency : undefined,
         capPeriod: ruleState.capPeriod,
         requiresRegistration: ruleState.requiresRegistration,
         specificMerchants: ruleState.specificMerchants

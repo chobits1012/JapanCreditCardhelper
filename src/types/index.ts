@@ -18,7 +18,17 @@ export type RewardType = 'cash' | 'points' | 'miles';
 export interface BonusRule {
     id: string;
     name: string; // 例如: "日韓實體消費加碼"
+
+    // === 回饋類型 ===
+    rewardType?: 'percentage' | 'fixed'; // 百分比回饋 或 固定金額回饋（預設 percentage）
+
+    // === 百分比回饋參數 ===
     rate: number; // 回饋率 (例如 0.03 代表 3%)
+
+    // === 固定金額回饋參數（rewardType = 'fixed' 時使用）===
+    fixedRewardAmount?: number;           // 固定回饋金額（如 10000）
+    fixedRewardCurrency?: 'TWD' | 'JPY';  // 固定回饋幣別
+
     region?: 'global' | 'japan' | 'taiwan'; // 適用地區 (New)
 
     // 個別規則期限 (Optional - 未設定時使用 RewardProgram 的期限)
@@ -37,7 +47,7 @@ export interface BonusRule {
     requiresRegistration?: boolean; // 是否需要登錄 (New)
     note?: string;                  // 備註 (New)
 
-    // 上限設定
+    // 上限設定（百分比回饋時使用）
     capAmount?: number;             // 回饋上限金額 (undefined 代表無上限)
     capAmountCurrency?: 'TWD' | 'JPY'; // 上限幣別（預設 TWD）
     capPeriod?: 'monthly' | 'campaign' | 'annual'; // 上限週期 (New: campaign = 活動期間總上限)

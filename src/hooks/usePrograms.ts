@@ -109,10 +109,13 @@ export function usePrograms({ initialPrograms, cardId }: UseProgramsOptions = {}
         const newRule: BonusRuleState = {
             id: crypto.randomUUID(),
             name: '',
+            rewardType: 'percentage',
             rate: '3',
             capAmount: '',
             capAmountCurrency: 'TWD',
             capPeriod: 'monthly',
+            fixedRewardAmount: '',
+            fixedRewardCurrency: 'JPY',
             checkJapan: false,
             requiresRegistration: false,
             specificMerchants: '',

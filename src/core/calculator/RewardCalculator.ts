@@ -323,11 +323,75 @@ export class RewardCalculator {
         program: RewardProgram,
         usageMap: Record<string, number>
     ): number {
+        // 如果交易金額為 0，不計算任何回饋
+        if (amountTWD === 0) {
+            return 0;
+        }
+
+        const rewardType = rule.rewardType || 'percentage';
+
+        if (rewardType === 'fixed') {
+            return this.calculateFixedReward(rule, transaction, amountTWD, exchangeRate, program, usageMap);
+        } else {
+            return this.calculatePercentageReward(rule, transaction, amountTWD, exchangeRate, program, usageMap);
+        }
+    }
+
+    /**
+     * 計算固定金額回饋（累積達標一次性獎勵）
+     * 
+     * 邏輯：
+     * 1. 檢查累積消費是否達到門檻
+     * 2. 如果已經發放過（usageMap 有記錄），不再發放
+     * 3. 達標且未發放，則發放固定金額回饋，歸屬於讓累積達標的這筆交易
+     */
+    private calculateFixedReward(
+        rule: BonusRule,
+        _transaction: Transaction,
+        _amountTWD: number,
+        exchangeRate: number,
+        _program: RewardProgram,
+        usageMap: Record<string, number>
+    ): number {
+        // 檢查是否已經發放過
+        const alreadyGiven = usageMap[rule.id] || 0;
+        if (alreadyGiven > 0) {
+            // 已達標並發放過，後續交易不再獲得此回饋
+            return 0;
+        }
+
+        // 固定金額回饋必須有設定金額
+        if (!rule.fixedRewardAmount) {
+            return 0;
+        }
+
+        // 將固定回饋金額轉換為 TWD
+        const rewardCurrency = rule.fixedRewardCurrency || 'JPY';
+        const rewardTWD = rewardCurrency === 'JPY'
+            ? Math.floor(rule.fixedRewardAmount * exchangeRate)
+            : rule.fixedRewardAmount;
+
+        // 累積型門檻檢查已在 isRuleApplicable 中完成
+        // 如果能走到這裡，表示已達標，發放固定金額回饋
+        return rewardTWD;
+    }
+
+    /**
+     * 計算百分比回饋
+     */
+    private calculatePercentageReward(
+        rule: BonusRule,
+        transaction: Transaction,
+        amountTWD: number,
+        exchangeRate: number,
+        program: RewardProgram,
+        usageMap: Record<string, number>
+    ): number {
         if (rule.minAmountType !== 'cumulative') {
             return Math.floor(amountTWD * rule.rate);
         }
 
-        // 累積型加碼計算
+        // 累積型百分比回饋計算
         if (!this.cumulativeCalculator) {
             return Math.floor(amountTWD * rule.rate);
         }
@@ -343,6 +407,11 @@ export class RewardCalculator {
         const currentAmount = thresholdCurrency === 'JPY'
             ? transaction.amount
             : amountTWD;
+
+        // 如果當前交易金額為 0，則累積型規則不應計算任何回饋
+        if (currentAmount === 0) {
+            return 0;
+        }
 
         const accumulatedTotal = accumulated + currentAmount;
         const accumulatedTotalTWD = thresholdCurrency === 'JPY'

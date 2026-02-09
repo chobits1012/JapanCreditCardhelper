@@ -235,42 +235,68 @@ export function calculateReward(
             // Calculate potential bonus
             let bonusAmount;
 
-            // Different calculation for cumulative vs per-transaction bonuses
-            if (rule.minAmountType === 'cumulative') {
-                // Cumulative bonus: Calculate based on accumulated total
-                const thresholdCurrency = rule.minAmountCurrency || 'TWD';
-
-                // Get accumulated spending (excluding current transaction)
-                const accumulated = calculateCumulativeSpending(
-                    transaction.id,
-                    card.id,
-                    program.startDate,
-                    program.endDate,
-                    thresholdCurrency
-                );
-
-                // Get current transaction amount in threshold currency
-                const currentAmount = thresholdCurrency === 'JPY'
-                    ? Math.floor(transaction.amount)
-                    : amountTWD;
-
-                // Total accumulated spending (including current transaction)
-                const accumulatedTotal = accumulated + currentAmount;
-
-                // Convert accumulated total to TWD for reward calculation
-                const accumulatedTotalTWD = thresholdCurrency === 'JPY'
-                    ? Math.floor(accumulatedTotal * exchangeRate)
-                    : accumulatedTotal;
-
-                // Calculate total expected reward from accumulated spending
-                const totalExpectedReward = Math.floor(accumulatedTotalTWD * rule.rate);
-
-                // Subtract already-given rewards to get this transaction's bonus
-                const alreadyGiven = usageMap[rule.id] || 0;
-                bonusAmount = Math.max(0, totalExpectedReward - alreadyGiven);
+            // 如果交易金額為 0，不計算任何回饋
+            if (amountTWD === 0) {
+                bonusAmount = 0;
             } else {
-                // Per-transaction bonus: Use current transaction amount (original logic)
-                bonusAmount = Math.floor(amountTWD * rule.rate);
+                const rewardType = rule.rewardType || 'percentage';
+
+                if (rewardType === 'fixed') {
+                    // 固定金額回饋（累積達標一次性獎勵）
+                    const alreadyGiven = usageMap[rule.id] || 0;
+                    if (alreadyGiven > 0) {
+                        // 已發放過，不再發放
+                        bonusAmount = 0;
+                    } else if (rule.fixedRewardAmount) {
+                        // 將固定回饋金額轉換為 TWD
+                        const rewardCurrency = rule.fixedRewardCurrency || 'JPY';
+                        bonusAmount = rewardCurrency === 'JPY'
+                            ? Math.floor(rule.fixedRewardAmount * exchangeRate)
+                            : rule.fixedRewardAmount;
+                    } else {
+                        bonusAmount = 0;
+                    }
+                } else if (rule.minAmountType === 'cumulative') {
+                    // 累積型百分比回饋
+                    const thresholdCurrency = rule.minAmountCurrency || 'TWD';
+
+                    // Get accumulated spending (excluding current transaction)
+                    const accumulated = calculateCumulativeSpending(
+                        transaction.id,
+                        card.id,
+                        program.startDate,
+                        program.endDate,
+                        thresholdCurrency
+                    );
+
+                    // Get current transaction amount in threshold currency
+                    const currentAmount = thresholdCurrency === 'JPY'
+                        ? Math.floor(transaction.amount)
+                        : amountTWD;
+
+                    // 如果當前交易金額為 0，累積型規則不應計算任何回饋
+                    if (currentAmount === 0) {
+                        bonusAmount = 0;
+                    } else {
+                        // Total accumulated spending (including current transaction)
+                        const accumulatedTotal = accumulated + currentAmount;
+
+                        // Convert accumulated total to TWD for reward calculation
+                        const accumulatedTotalTWD = thresholdCurrency === 'JPY'
+                            ? Math.floor(accumulatedTotal * exchangeRate)
+                            : accumulatedTotal;
+
+                        // Calculate total expected reward from accumulated spending
+                        const totalExpectedReward = Math.floor(accumulatedTotalTWD * rule.rate);
+
+                        // Subtract already-given rewards to get this transaction's bonus
+                        const alreadyGiven = usageMap[rule.id] || 0;
+                        bonusAmount = Math.max(0, totalExpectedReward - alreadyGiven);
+                    }
+                } else {
+                    // Per-transaction bonus: Use current transaction amount (original logic)
+                    bonusAmount = Math.floor(amountTWD * rule.rate);
+                }
             }
 
             let isCapped = false;
