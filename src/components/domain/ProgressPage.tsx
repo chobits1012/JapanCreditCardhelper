@@ -104,15 +104,15 @@ export default function ProgressPage() {
             ) : (
                 <div className="space-y-6">
                     {activeCards.map(card => {
-                        // Find all rules with caps
-                        const rulesWithCaps = card.programs.flatMap(p => p.bonusRules)
-                            .filter(r => r.capAmount !== undefined)
+                        // Find all rules with caps OR cumulative thresholds
+                        const rulesWithProgress = card.programs.flatMap(p => p.bonusRules)
+                            .filter(r => r.capAmount !== undefined || r.minAmountType === 'cumulative')
                             .filter(r => {
                                 const allowedRegions = mode === 'travel' ? ['global', 'japan'] : ['global', 'taiwan'];
                                 return allowedRegions.includes(r.region || 'japan');
                             });
 
-                        if (rulesWithCaps.length === 0) return null;
+                        if (rulesWithProgress.length === 0) return null;
 
                         return (
                             <div key={card.id} className="relative group">
@@ -139,7 +139,94 @@ export default function ProgressPage() {
 
                                     {/* Rules Usage Section */}
                                     <div className="p-5 space-y-6">
-                                        {rulesWithCaps.map(rule => {
+                                        {rulesWithProgress.map(rule => {
+                                            const isCumulativeRule = rule.minAmountType === 'cumulative';
+                                            const hasCapAmount = rule.capAmount !== undefined;
+
+                                            // === 累積達標規則（如 JCB 春季加碼）===
+                                            if (isCumulativeRule && !hasCapAmount) {
+                                                const thresholdCurrency = rule.minAmountCurrency || 'TWD';
+                                                const currencySymbol = thresholdCurrency === 'JPY' ? '¥' : '$';
+                                                const threshold = rule.minAmount || 0;
+
+                                                // 計算累積消費金額
+                                                const ruleStart = rule.startDate || card.programs[0]?.startDate || '';
+                                                const ruleEnd = rule.endDate || card.programs[0]?.endDate || '';
+                                                const cardTransactions = transactions
+                                                    .filter(tx => tx.cardId === card.id)
+                                                    .filter(tx => tx.date >= ruleStart && tx.date <= ruleEnd);
+
+                                                const cumulativeSpent = cardTransactions.reduce((sum, tx) => {
+                                                    const txAmount = thresholdCurrency === 'JPY'
+                                                        ? (tx.currency === 'JPY' ? tx.amount : Math.floor(tx.amount / tx.exchangeRate))
+                                                        : (tx.currency === 'TWD' ? tx.amount : Math.floor(tx.amount * tx.exchangeRate));
+                                                    return sum + txAmount;
+                                                }, 0);
+
+                                                const percent = threshold > 0 ? Math.min(100, (cumulativeSpent / threshold) * 100) : 0;
+                                                const isAchieved = cumulativeSpent >= threshold;
+                                                const isNearTarget = percent >= 70;
+
+                                                // 回饋金額描述
+                                                const rewardDesc = rule.rewardType === 'fixed' && rule.fixedRewardAmount
+                                                    ? `${rule.fixedRewardCurrency === 'JPY' ? '¥' : '$'}${rule.fixedRewardAmount.toLocaleString()}`
+                                                    : `${(rule.rate * 100).toFixed(0)}%`;
+
+                                                return (
+                                                    <div key={rule.id} className="space-y-2.5">
+                                                        <div className="flex justify-between items-end">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-slate-700">{rule.name}</span>
+                                                                {isAchieved && (
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold border border-emerald-200">
+                                                                        ✓ 達標
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className={`text-xs font-bold font-mono ${isAchieved ? 'text-emerald-600' : isNearTarget ? 'text-amber-500' : 'text-indigo-600'}`}>
+                                                                    {currencySymbol}{cumulativeSpent.toLocaleString()}
+                                                                </span>
+                                                                <span className="text-[10px] text-slate-400 font-medium ml-1">/ {currencySymbol}{threshold.toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Progress Bar */}
+                                                        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden ring-1 ring-slate-100 shadow-inner relative">
+                                                            <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-400 to-transparent" />
+                                                            <div
+                                                                className={`h-full rounded-full shadow-sm relative transition-all duration-500 ease-out
+                                                                    ${isAchieved
+                                                                        ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                                                                        : isNearTarget
+                                                                            ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                                                                            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                                                                    }
+                                                                `}
+                                                                style={{ width: `${percent}%` }}
+                                                            />
+                                                        </div>
+
+                                                        {/* Status Label */}
+                                                        {isAchieved ? (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                <p className="text-[10px] font-bold text-emerald-600">
+                                                                    🎉 已達標！獲得 {rewardDesc} 回饋
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="text-[10px] text-slate-400">
+                                                                    還差 {currencySymbol}{(threshold - cumulativeSpent).toLocaleString()} 即可獲得 {rewardDesc} 回饋
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+
+                                            // === 原有的上限型規則（capAmount）===
                                             const nowStr = format(new Date(), 'yyyy-MM-dd');
                                             const used = getRuleUsage(rule.id, card.id, nowStr, card.statementDate || 27, card.billingCycleType);
                                             const cap = rule.capAmount || 0;
