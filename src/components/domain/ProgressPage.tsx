@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Trash2, ArrowUpDown, ChevronDown, Calendar, Store, DollarSign } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { format } from 'date-fns';
@@ -18,9 +18,24 @@ export default function ProgressPage() {
     // Selected Transaction for Detail Modal
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
+    // Month Filter State — defaults to current month (e.g., '2026-02')
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+
+    // Collect all unique months from transactions for the filter pills
+    const availableMonths = useMemo(() => {
+        const months = new Set<string>();
+        transactions.forEach(tx => {
+            months.add(tx.date.substring(0, 7));
+        });
+        return Array.from(months).sort().reverse(); // newest first
+    }, [transactions]);
+
     // Show all transactions regardless of mode
     // This allows users to see TWD purchases (e.g., Klook) during travel mode
-    const filteredTransactions = transactions;
+    const filteredTransactions = filterMonth === 'all'
+        ? transactions
+        : transactions.filter(tx => tx.date.substring(0, 7) === filterMonth);
 
     // Sort transactions
     const sortedTransactions = [...filteredTransactions].sort((a, b) => {
@@ -222,6 +237,16 @@ export default function ProgressPage() {
                                                                 </p>
                                                             </div>
                                                         )}
+                                                        {/* Period Label */}
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <Calendar className="w-2.5 h-2.5 text-slate-300 flex-shrink-0" />
+                                                            <span className="text-[9px] text-slate-400">
+                                                                {ruleStart && ruleEnd
+                                                                    ? `${ruleStart.replace(/-/g, '/')}～${ruleEnd.replace(/-/g, '/')}`
+                                                                    : '活動期間'
+                                                                }
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 );
                                             }
@@ -278,6 +303,59 @@ export default function ProgressPage() {
                                                             <p className="text-[10px] font-bold text-rose-500">已達上限，建議更換卡片</p>
                                                         </div>
                                                     )}
+                                                    {/* Period Label */}
+                                                    {(() => {
+                                                        const capPeriod = rule.capPeriod || 'monthly';
+                                                        if (capPeriod === 'campaign') {
+                                                            // Find parent program for start/end dates
+                                                            const parentProg = card.programs.find(p => p.bonusRules.some(r => r.id === rule.id));
+                                                            const pStart = rule.startDate || parentProg?.startDate || '';
+                                                            const pEnd = rule.endDate || parentProg?.endDate || '';
+                                                            return (
+                                                                <div className="flex items-center gap-1 mt-0.5">
+                                                                    <Calendar className="w-2.5 h-2.5 text-slate-300 flex-shrink-0" />
+                                                                    <span className="text-[9px] text-slate-400">
+                                                                        {pStart && pEnd
+                                                                            ? `${pStart.replace(/-/g, '/')}～${pEnd.replace(/-/g, '/')}`
+                                                                            : '活動期間'
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        // Monthly period
+                                                        const now = new Date();
+                                                        const billingType = card.billingCycleType || 'calendar';
+                                                        if (billingType === 'statement' && card.statementDate) {
+                                                            const sd = card.statementDate;
+                                                            const day = now.getDate();
+                                                            let cycleStart: Date, cycleEnd: Date;
+                                                            if (day > sd) {
+                                                                cycleStart = new Date(now.getFullYear(), now.getMonth(), sd + 1);
+                                                                cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, sd);
+                                                            } else {
+                                                                cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, sd + 1);
+                                                                cycleEnd = new Date(now.getFullYear(), now.getMonth(), sd);
+                                                            }
+                                                            return (
+                                                                <div className="flex items-center gap-1 mt-0.5">
+                                                                    <Calendar className="w-2.5 h-2.5 text-slate-300 flex-shrink-0" />
+                                                                    <span className="text-[9px] text-slate-400">
+                                                                        結帳週期 {format(cycleStart, 'MM/dd')}～{format(cycleEnd, 'MM/dd')}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        // Calendar month
+                                                        return (
+                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                <Calendar className="w-2.5 h-2.5 text-slate-300 flex-shrink-0" />
+                                                                <span className="text-[9px] text-slate-400">
+                                                                    {now.getMonth() + 1}月份
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
                                             );
                                         })}
@@ -291,53 +369,87 @@ export default function ProgressPage() {
 
             {/* Transaction History Section */}
             <div className="pt-4 border-t border-gray-100">
-                <header className="flex justify-between items-end mb-4">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
+                <header className="mb-4 space-y-3">
+                    <div className="flex justify-between items-end">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-lg font-bold text-gray-800">交易紀錄</h2>
 
-                        {/* Sort Dropdown */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsSortOpen(!isSortOpen)}
-                                className="flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-[10px] font-bold text-stone-600 transition-colors"
-                            >
-                                <ArrowUpDown className="w-3 h-3" />
-                                {sortBy === 'date' ? '日期' : sortBy === 'amount' ? '金額' : '商家'}
-                                {sortOrder === 'asc' ? '↑' : '↓'}
-                                <ChevronDown className={`w-3 h-3 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
-                            </button>
+                            {/* Sort Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsSortOpen(!isSortOpen)}
+                                    className="flex items-center gap-1 px-2 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-[10px] font-bold text-stone-600 transition-colors"
+                                >
+                                    <ArrowUpDown className="w-3 h-3" />
+                                    {sortBy === 'date' ? '日期' : sortBy === 'amount' ? '金額' : '商家'}
+                                    {sortOrder === 'asc' ? '↑' : '↓'}
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
+                                </button>
 
-                            {isSortOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)}></div>
-                                    <div className="absolute left-0 mt-1 w-24 bg-white rounded-xl shadow-xl border border-stone-100 z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <button onClick={() => toggleSort('date')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'date' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
-                                            <Calendar className="w-3.5 h-3.5" /> 日期
-                                        </button>
-                                        <button onClick={() => toggleSort('amount')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'amount' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
-                                            <DollarSign className="w-3.5 h-3.5" /> 金額
-                                        </button>
-                                        <button onClick={() => toggleSort('merchant')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'merchant' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
-                                            <Store className="w-3.5 h-3.5" /> 商家
-                                        </button>
-                                    </div>
-                                </>
-                            )}
+                                {isSortOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)}></div>
+                                        <div className="absolute left-0 mt-1 w-24 bg-white rounded-xl shadow-xl border border-stone-100 z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <button onClick={() => toggleSort('date')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'date' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                                <Calendar className="w-3.5 h-3.5" /> 日期
+                                            </button>
+                                            <button onClick={() => toggleSort('amount')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'amount' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                                <DollarSign className="w-3.5 h-3.5" /> 金額
+                                            </button>
+                                            <button onClick={() => toggleSort('merchant')} className={`w-full text-left px-3 py-2 text-[11px] font-bold hover:bg-stone-50 flex items-center gap-2 ${sortBy === 'merchant' ? 'text-indigo-600 bg-indigo-50' : 'text-stone-600'}`}>
+                                                <Store className="w-3.5 h-3.5" /> 商家
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
+
+                        {transactions.length > 0 && (
+                            <button
+                                onClick={() => openModal(
+                                    '清空消費紀錄',
+                                    '確定要清除所有已紀錄的消費嗎？\n您的卡片設定與自訂資料「不會」被刪除，僅清除進度條與交易列表。',
+                                    () => resetTransactions(),
+                                    true
+                                )}
+                                className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                            >
+                                清空紀錄
+                            </button>
+                        )}
                     </div>
 
-                    {sortedTransactions.length > 0 && (
-                        <button
-                            onClick={() => openModal(
-                                '清空消費紀錄',
-                                '確定要清除所有已紀錄的消費嗎？\n您的卡片設定與自訂資料「不會」被刪除，僅清除進度條與交易列表。',
-                                () => resetTransactions(),
-                                true
-                            )}
-                            className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                        >
-                            清空紀錄
-                        </button>
+                    {/* Month Filter Pills */}
+                    {transactions.length > 0 && (
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                            <button
+                                onClick={() => setFilterMonth('all')}
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${filterMonth === 'all'
+                                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                                    : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                    }`}
+                            >
+                                全部
+                            </button>
+                            {availableMonths.map(month => {
+                                const m = month.split('-')[1];
+                                const label = `${parseInt(m)}月`;
+                                const isActive = filterMonth === month;
+                                return (
+                                    <button
+                                        key={month}
+                                        onClick={() => setFilterMonth(month)}
+                                        className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${isActive
+                                            ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                                            : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     )}
                 </header>
 
