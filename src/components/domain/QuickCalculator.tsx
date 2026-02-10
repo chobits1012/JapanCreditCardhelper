@@ -112,9 +112,14 @@ export default function QuickCalculator() {
         // debounce slightly to avoid rapid updates if typing fast, though local calc is fast.
         // For now, direct execution is fine for this scale.
 
-        const baseTx = createBaseTransaction();
-
         const calculatedResults = activeCards.map(card => {
+            // 建立交易時帶入正確的 cardId，讓累積計算器能正確過濾
+            const baseTx = {
+                ...createBaseTransaction(),
+                cardId: card.id,
+                programId: card.programs[0]?.id || '',
+            };
+
             const usageMap: Record<string, number> = {};
 
             // 1. Pre-fetch usage for all rules of this card
@@ -412,8 +417,12 @@ export default function QuickCalculator() {
                                                 let cumulativeSpent = 0;
                                                 if (isCumulative && minAmount && program) {
                                                     const { transactions } = useStore.getState();
+                                                    // 使用規則日期範圍（如 JCB 春季加碼有特定活動期間）
+                                                    const ruleStart = ruleDefinition?.startDate || program.startDate;
+                                                    const ruleEnd = ruleDefinition?.endDate || program.endDate;
                                                     cumulativeSpent = transactions
-                                                        .filter(tx => tx.date >= program.startDate && tx.date <= program.endDate)
+                                                        .filter(tx => tx.cardId === card.id) // 只計算同一張卡
+                                                        .filter(tx => tx.date >= ruleStart && tx.date <= ruleEnd)
                                                         .reduce((sum, tx) => {
                                                             const txAmount = minAmountCurrency === 'JPY'
                                                                 ? (tx.currency === 'JPY' ? tx.amount : Math.floor(tx.amount / tx.exchangeRate))
