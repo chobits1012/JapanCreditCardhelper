@@ -144,9 +144,15 @@ export default function QuickCalculator() {
 
 
     const handleSave = (res: CalculationResult) => {
-        const baseTx = createBaseTransaction();
         const card = cards.find(c => c.id === res.cardId);
         if (!card) return;
+
+        // Fix: Ensure cardId is present for cumulative calculator to work correctly
+        const baseTx = {
+            ...createBaseTransaction(),
+            cardId: card.id,
+            programId: card.programs[0]?.id || ''
+        };
 
         // 1. Fetch current usage for this card
         const usageMap: Record<string, number> = {};
