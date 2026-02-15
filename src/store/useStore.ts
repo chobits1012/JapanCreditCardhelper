@@ -118,7 +118,8 @@ export const useStore = create<AppState>()(
                     ruleId,
                     cardId,
                     start,
-                    end
+                    end,
+                    ruleDef.name // Pass name for legacy fallback
                 );
             }
         }),

@@ -10,18 +10,32 @@ export class UsageCalculator {
         ruleId: string,
         cardId: string,
         periodStart: Date,
-        periodEnd: Date
+        periodEnd: Date,
+        ruleName?: string // Optional for legacy fallback
     ): number {
         return transactions.reduce((sum, t) => {
             // Only count transactions for the specified card
             if (t.cardId !== cardId) return sum;
 
             // Ensure we compare apples to apples (dates)
+            // Fix: Use string comparison for dates to avoid timezone issues
+            // parseISO returns local date for YYYY-MM-DD, isWithinInterval handles it correctly IF start/end are also local
             const tDate = parseISO(t.date);
 
             // Allow transaction on the exact start/end boundaries
             if (isWithinInterval(tDate, { start: periodStart, end: periodEnd })) {
-                return sum + (t.ruleUsageMap?.[ruleId] || 0);
+                // 1. Priority: Use ruleUsageMap (New System)
+                if (t.ruleUsageMap && typeof t.ruleUsageMap[ruleId] === 'number') {
+                    return sum + t.ruleUsageMap[ruleId];
+                }
+
+                // 2. Fallback: Use appliedRuleNames (Legacy System)
+                // If ruleName is provided and present in appliedRuleNames, assume full amount usage
+                if (ruleName && t.appliedRuleNames?.includes(ruleName)) {
+                    return sum + t.amount;
+                }
+
+                return sum;
             }
             return sum;
         }, 0);

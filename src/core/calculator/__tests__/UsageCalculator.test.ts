@@ -65,6 +65,33 @@ describe('UsageCalculator', () => {
 
             expect(usage).toBe(0);
         });
+
+        it('should use fallback for legacy transactions (using appliedRuleNames)', () => {
+            const legacyTransactions: Transaction[] = [
+                {
+                    id: 'old1',
+                    date: '2024-01-15',
+                    cardId: 'card1',
+                    amount: 500,
+                    // No ruleUsageMap
+                    appliedRuleNames: ['My Bonus Rule']
+                } as any
+            ];
+
+            const start = parseISO('2024-01-01');
+            const end = parseISO('2024-01-31');
+
+            const usage = UsageCalculator.calculateRuleUsage(
+                legacyTransactions,
+                'rule_id_does_not_matter_for_fallback',
+                'card1',
+                start,
+                end,
+                'My Bonus Rule' // Pass rule name
+            );
+
+            expect(usage).toBe(500);
+        });
     });
 
     describe('getUsagePeriod', () => {
