@@ -10,7 +10,6 @@
 
 import { useMemo, useCallback } from 'react';
 import { RewardCalculator, createCalculatorWithStore, type CalculationResult, type CalculationMode } from '../core/calculator';
-import { calculateReward as calculateRewardLegacy } from '../services/calculator'; // Legacy Core
 import { useStore } from '../store/useStore';
 import type { CreditCard, Transaction } from '../types';
 
@@ -52,24 +51,10 @@ export interface UseCalculatorReturn {
      * 取得指定卡片的規則使用量
      */
     getRuleUsage: (cardId: string) => Record<string, number>;
-
-    /**
-     * 目前是否使用舊版核心
-     */
-    isLegacyMode: boolean;
 }
 
 export function useCalculator(): UseCalculatorReturn {
     const transactions = useStore(state => state.transactions);
-
-    // Feature Flag: Check URL for ?use_legacy=true
-    const isLegacyMode = useMemo(() => {
-        if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('use_legacy') === 'true';
-        }
-        return false;
-    }, []);
 
     // 建立帶有 Store 整合的計算器 (New Core)
     const calculator = useMemo(() => {
@@ -83,23 +68,9 @@ export function useCalculator(): UseCalculatorReturn {
         usageMap: Record<string, number> = {},
         mode: CalculationMode = 'travel'
     ): CalculationResult => {
-        if (isLegacyMode) {
-            // Legacy Core Output needs simple mapping to match New Core Interface
-            const legacyResult = calculateRewardLegacy(card, transaction, usageMap, mode);
-            return {
-                ...legacyResult,
-                programId: null, // Legacy doesn't return programId
-                breakdown: legacyResult.breakdown.map(b => ({
-                    ...b,
-                    // Legacy breakdown matches new breakdown structure mostly, 
-                    // ensure compatibility if types differ slightly
-                }))
-            } as CalculationResult;
-        }
-
         // New Core
         return calculator.calculate(card, transaction, usageMap, mode);
-    }, [calculator, isLegacyMode]);
+    }, [calculator]);
 
     // 計算試算（建立臨時 Transaction）
     const calculateSimulation = useCallback((
@@ -189,8 +160,7 @@ export function useCalculator(): UseCalculatorReturn {
         calculate,
         calculateSimulation,
         recalculate,
-        getRuleUsage,
-        isLegacyMode
+        getRuleUsage
     };
 }
 

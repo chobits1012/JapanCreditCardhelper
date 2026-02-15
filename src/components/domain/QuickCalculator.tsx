@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calculator, DollarSign, Store, Trophy, Plane, Home, AlertTriangle } from 'lucide-react';
+import { Calculator, DollarSign, Store, Trophy, Plane, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { useCalculator } from '../../hooks/useCalculator';
 import type { CalculationResult } from '../../core/calculator';
@@ -8,7 +8,7 @@ import type { MerchantCategory } from '../../types';
 
 export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction, mode, toggleMode } = useStore();
-    const { calculate, recalculate, isLegacyMode } = useCalculator();
+    const { calculate, recalculate } = useCalculator();
 
     // Form State
     const [amount, setAmount] = useState<number | ''>('');
@@ -206,13 +206,7 @@ export default function QuickCalculator() {
                 </button>
             </header>
 
-            {/* Legacy Mode Indicator */}
-            {isLegacyMode && (
-                <div className="mb-4 p-2 bg-amber-100 border border-amber-300 text-amber-800 text-xs rounded-lg flex items-center justify-center gap-2 font-bold animate-pulse">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>⚠️ 舊版核心測試模式 (Legacy Mode)</span>
-                </div>
-            )}
+
 
 
             {/* Input Form */}
