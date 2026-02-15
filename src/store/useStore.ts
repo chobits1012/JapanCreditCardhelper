@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { CreditCard, Transaction, BillingCycleType } from '../types';
 import { MOCK_CARDS } from '../data/mockData';
 import { CARD_TEMPLATES } from '../data/cardTemplates';
+import { UsageCalculator } from '../core/calculator/UsageCalculator';
+import type { BonusRule, RewardProgram } from '../types';
 
 interface AppState {
     cards: CreditCard[];
@@ -82,12 +84,9 @@ export const useStore = create<AppState>()(
             getRuleUsage: (ruleId: string, cardId: string, targetDateStr: string, statementDate: number = 31, billingCycleType: BillingCycleType = 'calendar') => {
                 const { transactions, cards } = get();
 
-                // 1. Find the Rule Definition to check its capPeriod
-                // We need to search through all cards -> programs -> bonusRules
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let ruleDef: any = null;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let programDef: any = null;
+                // 1. Find the Rule Definition
+                let ruleDef: BonusRule | null = null;
+                let programDef: RewardProgram | null = null;
 
                 for (const card of cards) {
                     for (const prog of card.programs) {
@@ -101,50 +100,26 @@ export const useStore = create<AppState>()(
                     if (ruleDef) break;
                 }
 
-                // Parse target date
-                const targetDate = new Date(targetDateStr);
-                const targetDay = targetDate.getDate();
-                const targetYear = targetDate.getFullYear();
-                const targetMonth = targetDate.getMonth();
-
-                let start: Date;
-                let end: Date;
-
-                // 2. Determine Calculation Period
-                if (ruleDef && ruleDef.capPeriod === 'campaign' && programDef) {
-                    // Campaign Period: Use Program Start/End Dates
-                    start = new Date(programDef.startDate);
-                    end = new Date(programDef.endDate);
-                } else if (billingCycleType === 'calendar') {
-                    // Calendar Month: 1st to end of month
-                    start = new Date(targetYear, targetMonth, 1);
-                    end = new Date(targetYear, targetMonth + 1, 0); // Last day of month
-                } else {
-                    // Statement Billing Cycle Logic
-                    if (targetDay > statementDate) {
-                        // Current cycle started this month on (statementDate + 1)
-                        start = new Date(targetYear, targetMonth, statementDate + 1);
-                        // Ends next month on statementDate
-                        end = new Date(targetYear, targetMonth + 1, statementDate);
-                    } else {
-                        // Current cycle started last month
-                        start = new Date(targetYear, targetMonth - 1, statementDate + 1);
-                        // Ends this month on statementDate
-                        end = new Date(targetYear, targetMonth, statementDate);
-                    }
+                if (!ruleDef || !programDef) {
+                    return 0;
                 }
 
-                return transactions.reduce((sum, t) => {
-                    // Only count transactions for the specified card
-                    if (t.cardId !== cardId) return sum;
+                // 2. Delegate calculation to UsageCalculator
+                const { start, end } = UsageCalculator.getUsagePeriod(
+                    targetDateStr,
+                    ruleDef,
+                    programDef,
+                    statementDate,
+                    billingCycleType
+                );
 
-                    const tDate = new Date(t.date);
-                    // Check if transaction falls within the determined period
-                    if (tDate >= start && tDate <= end) {
-                        return sum + (t.ruleUsageMap?.[ruleId] || 0);
-                    }
-                    return sum;
-                }, 0);
+                return UsageCalculator.calculateRuleUsage(
+                    transactions,
+                    ruleId,
+                    cardId,
+                    start,
+                    end
+                );
             }
         }),
         {
