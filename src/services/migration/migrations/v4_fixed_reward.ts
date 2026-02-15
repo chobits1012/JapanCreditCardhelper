@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * V4 遷移腳本：固定金額回饋類型支援
  * 

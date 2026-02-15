@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * V3 遷移腳本：多 Program 支援
  * 
@@ -11,7 +12,6 @@ export const migration_v3_multi_program: Migration = {
     version: DATA_VERSIONS.V3_MULTI_PROGRAM,
     name: 'Multi-Program Support',
     description: '確保所有卡片都有完整的 programs 陣列結構',
-
     up: (storeData: any) => {
         if (!storeData?.state?.cards) {
             return storeData;

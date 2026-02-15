@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calculator, DollarSign, Store, Trophy, Plane, Home } from 'lucide-react';
+import { Calculator, DollarSign, Store, Trophy, Plane, Home, AlertTriangle } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { useCalculator } from '../../hooks/useCalculator';
 import type { CalculationResult } from '../../core/calculator';
-import { recalculateTransaction } from '../../services/calculator';
 import type { MerchantCategory } from '../../types';
 
 export default function QuickCalculator() {
     const { cards, activeCardIds, addTransaction, mode, toggleMode } = useStore();
-    const { calculate } = useCalculator();
+    const { calculate, recalculate, isLegacyMode } = useCalculator();
 
     // Form State
     const [amount, setAmount] = useState<number | ''>('');
@@ -158,8 +157,8 @@ export default function QuickCalculator() {
             });
         }
 
-        // 2. Use service to get final transaction object
-        const finalTx = recalculateTransaction(card, baseTx, usageMap, mode);
+        // 2. Use hook function (unified logic) to get final transaction object
+        const finalTx = recalculate(card, baseTx, usageMap, mode);
 
         addTransaction(finalTx);
         setSavedId(res.cardId);
@@ -200,6 +199,15 @@ export default function QuickCalculator() {
                     </div>
                 </button>
             </header>
+
+            {/* Legacy Mode Indicator */}
+            {isLegacyMode && (
+                <div className="mb-4 p-2 bg-amber-100 border border-amber-300 text-amber-800 text-xs rounded-lg flex items-center justify-center gap-2 font-bold animate-pulse">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>⚠️ 舊版核心測試模式 (Legacy Mode)</span>
+                </div>
+            )}
+
 
             {/* Input Form */}
             <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in-up delay-100">

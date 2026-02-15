@@ -84,7 +84,9 @@ export const useStore = create<AppState>()(
 
                 // 1. Find the Rule Definition to check its capPeriod
                 // We need to search through all cards -> programs -> bonusRules
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let ruleDef: any = null;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let programDef: any = null;
 
                 for (const card of cards) {
@@ -148,14 +150,17 @@ export const useStore = create<AppState>()(
         {
             name: 'credit-card-helper-storage',
             version: 5, // Bump for fresh start
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             migrate: (persistedState: any, version) => {
                 let state = persistedState;
 
                 // Migration to v2: Dual Base Rates & Region
                 if (version === undefined || version < 2) {
                     const existingCards = state.cards || [];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const migratedCards = existingCards.map((card: any) => ({
                         ...card,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         programs: card.programs.map((prog: any) => ({
                             ...prog,
                             // Map old baseRate to baseRateOverseas
@@ -163,6 +168,7 @@ export const useStore = create<AppState>()(
                             // Default domestic to overseas (safe fallback) or 1%
                             baseRateDomestic: prog.baseRateDomestic ?? prog.baseRate ?? 0.01,
                             // Migrate Rules: Default to 'japan' if not set
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             bonusRules: prog.bonusRules.map((rule: any) => ({
                                 ...rule,
                                 region: rule.region || 'japan'
@@ -189,6 +195,7 @@ export const useStore = create<AppState>()(
                     const templateJiho = CARD_TEMPLATES.find(t => t.name === '吉鶴卡');
                     if (templateJiho && templateJiho.programs) {
                         const existingCards = state.cards || [];
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const updatedCards = existingCards.map((card: any) => {
                             if (card.name === '吉鶴卡') {
                                 // Refresh programs from template to get new rules (with paymentMethods)
